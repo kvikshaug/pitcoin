@@ -1,7 +1,7 @@
 from cStringIO import StringIO
 import os
 
-from datatypes import messages, structures, serializers
+from datatypes import messages, structures
 from exceptions import NodeDisconnectException, UnknownCommand
 
 class BitcoinBasicClient(object):
@@ -49,17 +49,15 @@ class BitcoinBasicClient(object):
         buffer_size = self.buffer.tell()
 
         # Check if a complete header is present
-        if buffer_size < serializers.MessageHeaderSerializer.calcsize():
+        if buffer_size < structures.MessageHeader.calcsize():
             return
 
         # Go to the beginning of the buffer
         self.buffer.reset()
 
-        message_model = None
-        message_header_serial = serializers.MessageHeaderSerializer()
-        message_header = message_header_serial.deserialize(self.buffer)
-
-        total_length = serializers.MessageHeaderSerializer.calcsize() + message_header.length
+        message_header = structures.MessageHeader()
+        message_header.deserialize(self.buffer)
+        total_length = structures.MessageHeader.calcsize() + message_header.length
 
         # Incomplete message
         if buffer_size < total_length:
@@ -70,20 +68,16 @@ class BitcoinBasicClient(object):
         self.buffer = StringIO()
         self.handle_message_header(message_header, payload)
 
-        payload_checksum = \
-            serializers.MessageHeaderSerializer.calc_checksum(payload)
+        payload_checksum = structures.MessageHeader.calc_checksum(payload)
 
         # Check if the checksum is valid
         if payload_checksum != message_header.checksum:
-            return (message_header, message_model)
+            return (message_header, None)
 
         try:
-            deserializer = serializers.get(message_header.command)
-            message_model = deserializer.deserialize(StringIO(payload))
+            return (message_header, messages.deserialize(message_header.command, StringIO(payload)))
         except UnknownCommand:
-            pass
-
-        return (message_header, message_model)
+            return (message_header, None)
 
     def send_message(self, message):
         """This method will serialize the message using the
@@ -92,22 +86,27 @@ class BitcoinBasicClient(object):
 
         :param message: The message object to send
         """
-        bin_data = StringIO()
-        message_header = structures.MessageHeader(self.coin)
-        message_header_serial = serializers.MessageHeaderSerializer()
+        message_header = structures.MessageHeader()
+        message_header.set_coin(self.coin)
 
-        serializer = serializers.get(message.command)
-        bin_message = serializer.serialize(message)
-        payload_checksum = \
-            serializers.MessageHeaderSerializer.calc_checksum(bin_message)
-        message_header.checksum = payload_checksum
-        message_header.length = len(bin_message)
+        # Serialize the payload
+        payload_stream = StringIO()
+        message.serialize(payload_stream)
+        payload = payload_stream.getvalue()
+        payload_checksum = structures.MessageHeader.calc_checksum(payload)
+
+        # Feed payload meta into the header
         message_header.command = message.command
+        message_header.length = len(payload)
+        message_header.checksum = payload_checksum
 
-        bin_data.write(message_header_serial.serialize(message_header))
-        bin_data.write(bin_message)
+        # Now serialize the header
+        transmission = StringIO()
+        message_header.serialize(transmission)
+        transmission.write(payload)
 
-        self.socket.sendall(bin_data.getvalue())
+        # Cool, fire it away
+        self.socket.sendall(transmission.getvalue())
         self.handle_send_message(message_header, message)
 
     def loop(self):
@@ -129,7 +128,7 @@ class BitcoinBasicClient(object):
 
             # Check for the header and message
             message_header, message = data
-            if not message:
+            if message is None:
                 continue
 
             handle_func_name = "handle_" + message_header.command

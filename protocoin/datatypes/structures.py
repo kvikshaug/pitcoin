@@ -1,15 +1,22 @@
 import hashlib
 import time
+import struct
 
-import values
+from meta import DataModel
+import fields, values
 
-class MessageHeader(object):
+class MessageHeader(DataModel):
     """The header of all bitcoin messages."""
-    def __init__(self, coin="bitcoin"):
+
+    def __init__(self, *args, **kwargs):
+        self.magic = fields.UInt32LEField(default=values.MAGIC_VALUES['bitcoin'])
+        self.command = fields.FixedStringField(length=12, default=None)
+        self.length = fields.UInt32LEField(default=0)
+        self.checksum = fields.UInt32LEField(default=0)
+        super(MessageHeader, self).__init__(*args, **kwargs)
+
+    def set_coin(self, coin):
         self.magic = values.MAGIC_VALUES[coin]
-        self.command = "None"
-        self.length = 0
-        self.checksum = 0
 
     def _magic_to_text(self):
         """Converts the magic value to a textual representation."""
@@ -19,16 +26,32 @@ class MessageHeader(object):
         return "Unknown Magic"
 
     def __repr__(self):
-        return "<%s Magic=[%s] Length=[%d] Checksum=[%d]>" % \
-            (self.__class__.__name__, self._magic_to_text(),
-                self.length, self.checksum)
+        return "<%s Magic=[%s] Command=[%s] Length=[%d] Checksum=[%d]>" % \
+            (self.__class__.__name__, self._magic_to_text(), self.command, self.length, self.checksum)
 
-class IPv4Address(object):
+    @staticmethod
+    def calcsize():
+        return struct.calcsize("i12sii")
+
+    @staticmethod
+    def calc_checksum(payload):
+        """Calculate the checksum of the specified payload.
+
+        :param payload: The binary data payload.
+        """
+        sha256hash = hashlib.sha256(payload)
+        sha256hash = hashlib.sha256(sha256hash.digest())
+        checksum = sha256hash.digest()[:4]
+        return struct.unpack("<I", checksum)[0]
+
+class IPv4Address(DataModel):
     """The IPv4 Address (without timestamp)."""
-    def __init__(self):
-        self.services = values.SERVICES["NODE_NETWORK"]
-        self.ip_address = "0.0.0.0"
-        self.port = 8333
+
+    def __init__(self, *args, **kwargs):
+        self.services = fields.UInt64LEField(default=values.SERVICES["NODE_NETWORK"])
+        self.ip_address = fields.IPv4AddressField(default="0.0.0.0")
+        self.port = fields.UInt16BEField(default=8333)
+        super(IPv4Address, self).__init__(*args, **kwargs)
 
     def _services_to_text(self):
         """Converts the services field into a textual
@@ -43,28 +66,27 @@ class IPv4Address(object):
         services = self._services_to_text()
         if not services:
             services = "No Services"
-        return "<%s IP=[%s:%d] Services=%r>" % (self.__class__.__name__,
-            self.ip_address, self.port, services)
+        return "<%s IP=[%s:%d] Services=%r>" % (self.__class__.__name__, self.ip_address, self.port, services)
 
-class IPv4AddressTimestamp(IPv4Address):
+class IPv4AddressTimestamp(DataModel):
     """The IPv4 Address with timestamp."""
-    def __init__(self):
-        super(IPv4AddressTimestamp, self).__init__()
-        self.timestamp = time.time()
+
+    def __init__(self, *args, **kwargs):
+        self.timestamp = fields.UInt32LEField(default=time.time())
+        self.address = IPv4Address()
+        super(DataModel, self).__init__(*args, **kwargs)
 
     def __repr__(self):
-        services = self._services_to_text()
-        if not services:
-            services = "No Services"
-        return "<%s Timestamp=[%s] IP=[%s:%d] Services=%r>" % \
-            (self.__class__.__name__, time.ctime(self.timestamp),
-                self.ip_address, self.port, services)
+        return "<%s Timestamp=[%s] Address=[%r]>" % \
+            (self.__class__.__name__, time.ctime(self.timestamp), self.address)
 
 class Inventory(object):
     """The Inventory representation."""
-    def __init__(self):
-        self.inv_type = values.INVENTORY_TYPE["MSG_TX"]
-        self.inv_hash = 0
+
+    def __init__(self, *args, **kwargs):
+        self.inv_type = fields.UInt32LEField(default=values.INVENTORY_TYPE["MSG_TX"])
+        self.inv_hash = fields.Hash(default=0)
+        super(Inventory, self).__init__(*args, **kwargs)
 
     def type_to_text(self):
         """Converts the inventory type to text representation."""
@@ -75,36 +97,39 @@ class Inventory(object):
 
     def __repr__(self):
         return "<%s Type=[%s] Hash=[%064x]>" % \
-            (self.__class__.__name__, self.type_to_text(),
-                self.inv_hash)
+            (self.__class__.__name__, self.type_to_text(), self.inv_hash)
 
 class OutPoint(object):
     """The OutPoint of a transaction."""
-    def __init__(self):
-        self.out_hash = 0
-        self.index = 0
+
+    def __init__(self, *args, **kwargs):
+        self.out_hash = fields.Hash(default=0)
+        self.index = fields.UInt32LEField(default=0)
+        super(OutPoint, self).__init__(*args, **kwargs)
 
     def __repr__(self):
         return "<%s Index=[%d] Hash=[%064x]>" % \
-            (self.__class__.__name__, self.index,
-                self.out_hash)
+            (self.__class__.__name__, self.index, self.out_hash)
 
 class TxIn(object):
     """The transaction input representation."""
-    def __init__(self):
-        self.previous_output = None
-        self.signature_script = "Empty"
-        self.sequence = 0
+
+    def __init__(self, *args, **kwargs):
+        self.previous_output = OutPoint()
+        self.signature_script = fields.VariableStringField(default="Empty")
+        self.sequence = fields.UInt32LEField(default=0)
+        super(TxIn, self).__init__(*args, **kwargs)
 
     def __repr__(self):
-        return "<%s Sequence=[%d]>" % \
-            (self.__class__.__name__, self.sequence)
+        return "<%s Sequence=[%d]>" % (self.__class__.__name__, self.sequence)
 
 class TxOut(object):
     """The transaction output."""
-    def __init__(self):
-        self.value = 0
-        self.pk_script = "Empty"
+
+    def __init__(self, *args, **kwargs):
+        self.value = fields.Int64LEField(default=0)
+        self.pk_script = fields.VariableStringField(default="Empty")
+        super(TxOut, self).__init__(*args, **kwargs)
 
     def get_btc_value(self):
         return self.value//100000000 + self.value%100000000/100000000.0
@@ -115,14 +140,16 @@ class TxOut(object):
 
 class BlockHeader(object):
     """The header of the block."""
-    def __init__(self):
-        self.version = 0
-        self.prev_block = 0
-        self.merkle_root = 0
-        self.timestamp = 0
-        self.bits = 0
-        self.nonce = 0
-        self.txns_count = 0
+
+    def __init__(self, *args, **kwargs):
+        self.version = fields.UInt32LEField(default=0)
+        self.prev_block = fields.Hash(default=0)
+        self.merkle_root = fields.Hash(default=0)
+        self.timestamp = fields.UInt32LEField(default=0)
+        self.bits = fields.UInt32LEField(default=0)
+        self.nonce = fields.UInt32LEField(default=0)
+        self.txns_count = fields.VariableIntegerField(default=0)
+        super(BlockHeader, self).__init__(*args, **kwargs)
 
     def calculate_hash(self):
         """This method will calculate the hash of the block."""
@@ -137,5 +164,5 @@ class BlockHeader(object):
 
     def __repr__(self):
         return "<%s Version=[%d] Timestamp=[%s] Nonce=[%d] Hash=[%s] Tx Count=[%d]>" % \
-            (self.__class__.__name__, self.version, time.ctime(self.timestamp),
-                self.nonce, self.calculate_hash(), self.txns_count)
+            (self.__class__.__name__, self.version, time.ctime(self.timestamp), self.nonce, self.calculate_hash(),
+            self.txns_count)

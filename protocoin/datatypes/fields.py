@@ -1,83 +1,54 @@
-from cStringIO import StringIO
 import struct
 import socket
 
 class Field(object):
-    """Base class for the Fields. This class only implements
-    the counter to keep the order of the fields on the
-    serializer classes."""
-    counter = 0
+    order = 0
 
-    def __init__(self):
-        self.count = Field.counter
-        Field.counter += 1
+    def __init__(self, default=None):
+        # Set the field order, which is used for serializing
+        self.order = Field.order
+        Field.order += 1
 
-    def parse(self, value):
-        """This method should be implemented to parse the value
-        parameter into the field internal representation.
+        self.set_value(default)
 
-        :param value: value to be parsed
-        """
+    def set_value(self, value):
+        """Set the value directly"""
+        raise NotImplemented
+
+    def get_value(self):
+        """Return the current value"""
         raise NotImplemented
 
     def deserialize(self, stream):
-        """This method must read the stream data and then
-        deserialize and return the deserialized content.
-
-        :returns: the deserialized content
-        :param stream: stream of data to read
-        """
+        """Deserialize the given stream into this field"""
         raise NotImplemented
 
-    def serialize(self):
-        """Serialize the internal representation and return
-        the serialized data.
-
-        :returns: the serialized data
-        """
+    def serialize(self, stream):
+        """Serialize the current value into the given stream"""
         raise NotImplemented
 
     def __repr__(self):
-        return "<%s [%r]>" % (self.__class__.__name__,
-            repr(self.value))
+        return "<%s [%r]>" % (self.__class__.__name__, repr(self.value))
 
     def __str__(self):
         return str(self.value)
 
+
 class PrimaryField(Field):
-    """This is a base class for all fields that has only
-    one value and their value can be represented by
-    a Python struct datatype.
-
-    Example of use::
-
-        class UInt32LEField(PrimaryField):
-            datatype = "<I"
-    """
-
-    def parse(self, value):
-        """This method will set the internal value to the
-        specified value.
-
-        :param value: the value to be set
-        """
+    def set_value(self, value):
         self.value = value
 
-    def deserialize(self, stream):
-        """Deserialize the stream using the struct data type
-        specified.
+    def get_value(self):
+        return self.value
 
-        :param stream: the data stream
-        """
+    def deserialize(self, stream):
         data_size = struct.calcsize(self.datatype)
         data = stream.read(data_size)
-        return struct.unpack(self.datatype, data)[0]
+        self.value = struct.unpack(self.datatype, data)[0]
 
-    def serialize(self):
-        """Serialize the internal data and then return the
-        serialized data."""
+    def serialize(self, stream):
         data = struct.pack(self.datatype, self.value)
-        return data
+        stream.write(data)
 
 class Int32LEField(PrimaryField):
     """32-bit little-endian integer field."""
@@ -108,96 +79,54 @@ class UInt16BEField(PrimaryField):
     datatype = ">H"
 
 class FixedStringField(Field):
-    """A fixed length string field.
-
-    Example of use::
-
-        class MessageHeaderSerializer(Serializer):
-            model_class = MessageHeader
-            magic = fields.UInt32LEField()
-            command = fields.FixedStringField(12)
-            length = fields.UInt32LEField()
-            checksum = fields.UInt32LEField()
-    """
-    def __init__(self, length):
-        super(FixedStringField, self).__init__()
+    """A fixed length string field."""
+    def __init__(self, length, *args, **kwargs):
         self.length = length
+        super(FixedStringField, self).__init__(*args, **kwargs)
 
-    def parse(self, value):
-        self.value = value[:self.length]
+    def set_value(self, value):
+        self.value = value
+
+    def get_value(self):
+        return self.value
 
     def deserialize(self, stream):
         data = stream.read(self.length)
-        return data.split("\x00", 1)[0]
+        value = data.split("\x00", 1)[0]
+        self.value = value[:self.length]
 
-    def serialize(self):
-        bin_data = StringIO()
-        bin_data.write(self.value[:self.length])
-        bin_data.write("\x00" * (12 - len(self.value)))
-        return bin_data.getvalue()
-
-class NestedField(Field):
-    """A field used to nest another serializer.
-
-    Example of use::
-
-       class TxInSerializer(Serializer):
-           model_class = TxIn
-           previous_output = fields.NestedField(OutPointSerializer)
-           signature_script = fields.VariableStringField()
-           sequence = fields.UInt32LEField()
-    """
-    def __init__(self, serializer_class):
-        super(NestedField, self).__init__()
-        self.serializer_class = serializer_class
-        self.serializer = self.serializer_class()
-
-    def parse(self, value):
-        self.value = value
-
-    def deserialize(self, stream):
-        return self.serializer.deserialize(stream)
-
-    def serialize(self):
-        return self.serializer.serialize(self.value)
+    def serialize(self, stream):
+        stream.write(self.value[:self.length])
+        stream.write("\x00" * (12 - len(self.value)))
 
 class ListField(Field):
-    """A field used to serialize/deserialize a list of serializers.
+    """A field used to serialize/deserialize a list of fields. """
+    def __init__(self, field_class, *args, **kwargs):
+        self.length = VariableIntegerField()
+        self.field_class = field_class
+        super(ListField, self).__init__(*args, **kwargs)
 
-    Example of use::
-
-        class TxSerializer(Serializer):
-            model_class = Tx
-            version = fields.UInt32LEField()
-            tx_in = fields.ListField(TxInSerializer)
-            tx_out = fields.ListField(TxOutSerializer)
-            lock_time = fields.UInt32LEField()
-    """
-    def __init__(self, serializer_class):
-        super(ListField, self).__init__()
-        self.serializer_class = serializer_class
-        self.var_int = VariableIntegerField()
-
-    def parse(self, value):
+    def set_value(self, value):
+        self.length.set_value(len(value))
         self.value = value
 
-    def serialize(self):
-        bin_data = StringIO()
-        self.var_int.parse(len(self))
-        bin_data.write(self.var_int.serialize())
-        serializer = self.serializer_class()
-        for item in self:
-            bin_data.write(serializer.serialize(item))
-        return bin_data.getvalue()
+    def get_value(self):
+        return self.value
 
     def deserialize(self, stream):
-        count = self.var_int.deserialize(stream)
+        self.length.deserialize(stream)
         items = []
-        serializer = self.serializer_class()
-        for i in xrange(count):
-            data = serializer.deserialize(stream)
-            items.append(data)
-        return items
+        for i in xrange(self.length.get_value()):
+            subfield = self.field_class()
+            subfield.deserialize(stream)
+            items.append(subfield)
+
+        self.value = items
+
+    def serialize(self, stream):
+        self.length.serialize(stream)
+        for field in self.value:
+            stream.write(field.serialize())
 
     def __iter__(self):
         return iter(self.value)
@@ -209,24 +138,28 @@ class IPv4AddressField(Field):
     """An IPv4 address field without timestamp and reserved IPv6 space."""
     reserved = "\x00"*10 + "\xff"*2
 
-    def parse(self, value):
+    def set_value(self, value):
         self.value = value
+
+    def get_value(self):
+        return self.value
 
     def deserialize(self, stream):
         unused_reserved = stream.read(12)
         addr = stream.read(4)
-        return socket.inet_ntoa(addr)
+        self.value = socket.inet_ntoa(addr)
 
-    def serialize(self):
-        bin_data = StringIO()
-        bin_data.write(self.reserved)
-        bin_data.write(socket.inet_aton(self.value))
-        return bin_data.getvalue()
+    def serialize(self, stream):
+        stream.write(self.reserved)
+        stream.write(socket.inet_aton(self.value))
 
 class VariableIntegerField(Field):
     """A variable size integer field."""
-    def parse(self, value):
-        self.value = int(value)
+    def set_value(self, value):
+        self.value = value
+
+    def get_value(self):
+        return self.value
 
     def deserialize(self, stream):
         int_id_raw = stream.read(struct.calcsize("<B"))
@@ -240,38 +173,37 @@ class VariableIntegerField(Field):
         if int_id == 0xFF:
             data = stream.read(8)
             int_id = struct.unpack("<Q", data)[0]
-        return int_id
+        self.value = int(int_id)
 
-    def serialize(self):
+    def serialize(self, stream):
         if self.value < 0xFD:
-            return chr(self.value)
+            data = chr(self.value)
         if self.value <= 0xFFFF:
-            return chr(0xFD) + struct.pack("<H", self.value)
+            data = chr(0xFD) + struct.pack("<H", self.value)
         if self.value <= 0xFFFFFFFF:
-            return chr(0xFE) + struct.pack("<I", self.value)
-        return chr(0xFF) + struct.pack("<Q", self.value)
+            data = chr(0xFE) + struct.pack("<I", self.value)
+        data = chr(0xFF) + struct.pack("<Q", self.value)
+        stream.write(data)
 
 class VariableStringField(Field):
     """A variable length string field."""
+    length = VariableIntegerField()
 
-    def __init__(self):
-        super(VariableStringField, self).__init__()
-        self.var_int = VariableIntegerField()
+    def set_value(self, value):
+        self.length.set_value(len(value))
+        self.value = value
 
-    def parse(self, value):
-        self.value = str(value)
+    def get_value(self):
+        return self.value
 
     def deserialize(self, stream):
-        string_length = self.var_int.deserialize(stream)
-        string_data = stream.read(string_length)
-        return string_data
+        self.length.deserialize(stream)
+        string_value = stream.read(self.length.get_value())
+        self.value = str(string_value)
 
-    def serialize(self):
-        self.var_int.parse(len(self))
-        bin_data = StringIO()
-        bin_data.write(self.var_int.serialize())
-        bin_data.write(self.value)
-        return bin_data.getvalue()
+    def serialize(self, stream):
+        self.length.serialize(stream)
+        stream.write(self.value)
 
     def __len__(self):
         return len(self.value)
@@ -280,8 +212,11 @@ class Hash(Field):
     """A hash type field."""
     datatype = "<I"
 
-    def parse(self, value):
+    def set_value(self, value):
         self.value = value
+
+    def get_value(self):
+        return self.value
 
     def deserialize(self, stream):
         data_size = struct.calcsize(self.datatype)
@@ -290,13 +225,11 @@ class Hash(Field):
             data = stream.read(data_size)
             val = struct.unpack(self.datatype, data)[0]
             intvalue += val << (i * 32)
-        return intvalue
+        self.value = intvalue
 
-    def serialize(self):
+    def serialize(self, stream):
         hash_ = self.value
-        bin_data = StringIO()
         for i in range(8):
             pack_data = struct.pack(self.datatype, hash_ & 0xFFFFFFFF)
-            bin_data.write(pack_data)
+            stream.write(pack_data)
             hash_ >>= 32
-        return bin_data.getvalue()
