@@ -1,7 +1,6 @@
-import binascii
 import hashlib
-
 import ecdsa
+
 from . import util
 
 class BitcoinPublicKey(object):
@@ -18,7 +17,7 @@ class BitcoinPublicKey(object):
         stringkey = hexkey.decode("hex")[1:]
         self.public_key = ecdsa.VerifyingKey.from_string(stringkey,
             curve=ecdsa.SECP256k1)
-    
+
     @classmethod
     def from_private_key(klass, private_key):
         """This class method will create a new Public Key
@@ -59,15 +58,15 @@ class BitcoinPublicKey(object):
         ripemd160 = hashlib.new('ripemd160')
         ripemd160.update(sha256digest)
         ripemd160_digest = ripemd160.digest()
-        
+
         # Prepend the version info
         ripemd160_digest = '\x00' + ripemd160_digest
-        
+
         # Calc checksum
         checksum = hashlib.sha256(ripemd160_digest).digest()
         checksum = hashlib.sha256(checksum).digest()
         checksum = checksum[:4]
-        
+
         # Append checksum
         address = ripemd160_digest + checksum
         address_bignum = int('0x' + address.encode('hex'), 16)
@@ -113,7 +112,7 @@ class BitcoinPrivateKey(object):
 
         :param stringkey: The key in string format
         :returns: A new Private Key
-        """     
+        """
         hexvalue = stringkey.encode("hex")
         return klass(hexvalue)
 
@@ -172,7 +171,7 @@ class BitcoinPrivateKey(object):
 
     def generate_public_key(self):
         """This method will create a new Public Key based on this
-        Private Key. 
+        Private Key.
 
         :returns: A new Public Key
         """
@@ -181,6 +180,3 @@ class BitcoinPrivateKey(object):
 
     def __repr__(self):
         return "<BitcoinPrivateKey hexkey=[%s]>" % self.to_hex()
-
-
-

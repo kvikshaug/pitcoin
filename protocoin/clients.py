@@ -1,7 +1,8 @@
 from cStringIO import StringIO
+import os
+
 from .serializers import *
 from .exceptions import NodeDisconnectException
-import os
 
 class BitcoinBasicClient(object):
     """The base class for a Bitcoin network client, this class
@@ -116,7 +117,7 @@ class BitcoinBasicClient(object):
 
             if len(data) <= 0:
                 raise NodeDisconnectException("Node disconnected.")
-            
+
             self.buffer.write(data)
             data = self.receive_message()
 

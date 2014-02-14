@@ -1,9 +1,5 @@
-from .exceptions import NodeDisconnectException
-
 from cStringIO import StringIO
 import struct
-import time
-import random
 import socket
 
 #: The protocol version
@@ -33,7 +29,7 @@ INVENTORY_TYPE = {
 
 class Field(object):
     """Base class for the Fields. This class only implements
-    the counter to keep the order of the fields on the 
+    the counter to keep the order of the fields on the
     serializer classes."""
     counter = 0
 
@@ -67,7 +63,7 @@ class Field(object):
         raise NotImplemented
 
     def __repr__(self):
-        return "<%s [%r]>" % (self.__class__.__name__, 
+        return "<%s [%r]>" % (self.__class__.__name__,
             repr(self.value))
 
     def __str__(self):
@@ -75,7 +71,7 @@ class Field(object):
 
 class PrimaryField(Field):
     """This is a base class for all fields that has only
-    one value and their value can be represented by 
+    one value and their value can be represented by
     a Python struct datatype.
 
     Example of use::
@@ -106,7 +102,7 @@ class PrimaryField(Field):
         """Serialize the internal data and then return the
         serialized data."""
         data = struct.pack(self.datatype, self.value)
-        return data       
+        return data
 
 class Int32LEField(PrimaryField):
     """32-bit little-endian integer field."""
@@ -169,7 +165,7 @@ class NestedField(Field):
     """A field used to nest another serializer.
 
     Example of use::
-       
+
        class TxInSerializer(Serializer):
            model_class = TxIn
            previous_output = fields.NestedField(OutPointSerializer)

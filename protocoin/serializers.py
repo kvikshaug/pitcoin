@@ -9,7 +9,7 @@ from . import fields
 
 class SerializerMeta(type):
     """The serializer meta class. This class will create an attribute
-    called '_fields' in each serializer with the ordered dict of 
+    called '_fields' in each serializer with the ordered dict of
     fields present on the subclasses.
     """
     def __new__(meta, name, bases, attrs):
@@ -131,7 +131,7 @@ class IPv4Address(object):
             if self.services & flag_mask:
                 services.append(service_name)
         return services
-        
+
     def __repr__(self):
         services = self._services_to_text()
         if not services:
