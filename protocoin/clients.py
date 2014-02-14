@@ -1,8 +1,8 @@
 from cStringIO import StringIO
 import os
 
-from .serializers import *
-from .exceptions import NodeDisconnectException
+from datatypes import messages, structures, serializers
+from exceptions import NodeDisconnectException, UnknownCommand
 
 class BitcoinBasicClient(object):
     """The base class for a Bitcoin network client, this class
@@ -49,17 +49,17 @@ class BitcoinBasicClient(object):
         buffer_size = self.buffer.tell()
 
         # Check if a complete header is present
-        if buffer_size < MessageHeaderSerializer.calcsize():
+        if buffer_size < serializers.MessageHeaderSerializer.calcsize():
             return
 
         # Go to the beginning of the buffer
         self.buffer.reset()
 
         message_model = None
-        message_header_serial = MessageHeaderSerializer()
+        message_header_serial = serializers.MessageHeaderSerializer()
         message_header = message_header_serial.deserialize(self.buffer)
 
-        total_length = MessageHeaderSerializer.calcsize() + message_header.length
+        total_length = serializers.MessageHeaderSerializer.calcsize() + message_header.length
 
         # Incomplete message
         if buffer_size < total_length:
@@ -71,15 +71,17 @@ class BitcoinBasicClient(object):
         self.handle_message_header(message_header, payload)
 
         payload_checksum = \
-            MessageHeaderSerializer.calc_checksum(payload)
+            serializers.MessageHeaderSerializer.calc_checksum(payload)
 
         # Check if the checksum is valid
         if payload_checksum != message_header.checksum:
             return (message_header, message_model)
 
-        if message_header.command in MESSAGE_MAPPING:
-            deserializer = MESSAGE_MAPPING[message_header.command]()
+        try:
+            deserializer = serializers.get(message_header.command)
             message_model = deserializer.deserialize(StringIO(payload))
+        except UnknownCommand:
+            pass
 
         return (message_header, message_model)
 
@@ -91,13 +93,13 @@ class BitcoinBasicClient(object):
         :param message: The message object to send
         """
         bin_data = StringIO()
-        message_header = MessageHeader(self.coin)
-        message_header_serial = MessageHeaderSerializer()
+        message_header = structures.MessageHeader(self.coin)
+        message_header_serial = serializers.MessageHeaderSerializer()
 
-        serializer = MESSAGE_MAPPING[message.command]()
+        serializer = serializers.get(message.command)
         bin_message = serializer.serialize(message)
         payload_checksum = \
-            MessageHeaderSerializer.calc_checksum(bin_message)
+            serializers.MessageHeaderSerializer.calc_checksum(bin_message)
         message_header.checksum = payload_checksum
         message_header.length = len(bin_message)
         message_header.command = message.command
@@ -143,7 +145,7 @@ class BitcoinClient(BitcoinBasicClient):
     def handshake(self):
         """This method will implement the handshake of the
         Bitcoin protocol. It will send the Version message."""
-        version = Version()
+        version = messages.Version()
         self.send_message(version)
 
     def handle_version(self, message_header, message):
@@ -154,7 +156,7 @@ class BitcoinClient(BitcoinBasicClient):
         :param message_header: The Version message header
         :param message: The Version message
         """
-        verack = VerAck()
+        verack = messages.VerAck()
         self.send_message(verack)
 
     def handle_ping(self, message_header, message):
@@ -165,6 +167,6 @@ class BitcoinClient(BitcoinBasicClient):
         :param message_header: The header of the Ping message
         :param message: The Ping message
         """
-        pong = Pong()
+        pong = messages.Pong()
         pong.nonce = message.nonce
         self.send_message(pong)
