@@ -1,5 +1,6 @@
 from io import BytesIO
 import os
+import socket
 
 from datatypes import messages, structures
 from exceptions import NodeDisconnectException, UnknownCommand, InvalidChecksum
@@ -8,33 +9,48 @@ class BitcoinBasicClient(object):
     """The base class for a Bitcoin network client, this class
     implements utility functions to create your own class.
 
-    :param socket: a socket that supports the makefile()
-                   method.
+    :param seed_address: The initial node address from which we will get further node addresses
+    :param seed_port: Optional port number
+    :param coin: E.g. 'bitcoin', 'bitcoin_testnet3', etc. See datatypes.values.MAGIC_VALUES.
     """
 
     coin = "bitcoin"
 
-    def __init__(self, socket):
-        self._socket = socket
+    DEFAULT_PORTS = {
+        'bitcoin': 8333,
+        'bitcoin_testnet3': 18333,
+    }
+
+    def __init__(self, seed_address, seed_port=None, coin=None):
+        if coin is not None:
+            BitcoinBasicClient.coin = coin
+
+        if seed_port is None:
+            seed_port = BitcoinClient.DEFAULT_PORTS[BitcoinBasicClient.coin]
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect((seed_address, seed_port))
+
+        self._socket = sock
         self._buffer = BytesIO()
 
     def close_stream(self):
         """This method will close the socket stream."""
         self._socket.close()
 
-    def handle_message_header(self, message_header, payload):
+    def handle_message_header(self, header, payload):
         """This method will be called for every message before the
         message payload deserialization.
 
-        :param message_header: The message header
+        :param header: The message header
         :param payload: The payload of the message
         """
         pass
 
-    def handle_send_message(self, message_header, message):
+    def handle_send_message(self, header, message):
         """This method will be called for every sent message.
 
-        :param message_header: The header of the message
+        :param header: The header of the message
         :param message: The message to be sent
         """
         pass
@@ -89,8 +105,8 @@ class BitcoinBasicClient(object):
 
         :param message: The message object to send
         """
-        message_header = structures.MessageHeader()
-        message_header.set_coin(self.coin)
+        header = structures.MessageHeader()
+        header.set_coin(self.coin)
 
         # Serialize the payload
         payload_stream = BytesIO()
@@ -99,18 +115,18 @@ class BitcoinBasicClient(object):
         payload_checksum = structures.MessageHeader.calc_checksum(payload)
 
         # Feed payload meta into the header
-        message_header.command = message.command
-        message_header.length = len(payload)
-        message_header.checksum = payload_checksum
+        header.command = message.command
+        header.length = len(payload)
+        header.checksum = payload_checksum
 
         # Now serialize the header
         transmission = BytesIO()
-        message_header.serialize(transmission)
+        header.serialize(transmission)
         transmission.write(payload)
 
         # Cool, fire it away
         self._socket.sendall(transmission.getvalue())
-        self.handle_send_message(message_header, message)
+        self.handle_send_message(header, message)
 
     def loop(self):
         """The main receive/send loop."""
@@ -132,9 +148,8 @@ class BitcoinBasicClient(object):
                         break
 
                     header, message, more_data = data
-                    handle_func = getattr(self, "handle_%s" % header.command, None)
-                    if handle_func:
-                        handle_func(header, message)
+                    if hasattr(self, "handle_%s" % header.command):
+                        getattr(self, "handle_%s" % header.command)(header, message)
                     if not more_data:
                         break
             except (InvalidChecksum, UnknownCommand) as e:
@@ -146,31 +161,20 @@ class BitcoinClient(BitcoinBasicClient):
     for a client to stay up in the network. It will handle
     the handshake rules as well answer the ping messages."""
 
-    def handshake(self):
-        """This method will implement the handshake of the
-        Bitcoin protocol. It will send the Version message."""
-        version = messages.Version()
-        self.send_message(version)
+    def handshake(self, callback=None):
+        """Initiate the connection with a Version exchange """
+        self.send_message(messages.Version())
 
-    def handle_version(self, message_header, message):
-        """This method will handle the Version message and
-        will send a VerAck message when it receives the
-        Version message.
+    def handle_version(self, header, message):
+        """Handle the Version message and reply with VerAck"""
+        self.send_message(messages.VerAck())
 
-        :param message_header: The Version message header
-        :param message: The Version message
-        """
-        verack = messages.VerAck()
-        self.send_message(verack)
+    def handle_verack(self, header, message):
+        self.on_handshake()
 
-    def handle_ping(self, message_header, message):
-        """This method will handle the Ping message and then
-        will answer every Ping message with a Pong message
-        using the nonce received.
+    def on_handshake(self):
+        pass
 
-        :param message_header: The header of the Ping message
-        :param message: The Ping message
-        """
-        pong = messages.Pong()
-        pong.nonce = message.nonce
-        self.send_message(pong)
+    def handle_ping(self, header, message):
+        """Handle the Ping message and reploy with Pong"""
+        self.send_message(messages.Pong(nonce=message.nonce))
