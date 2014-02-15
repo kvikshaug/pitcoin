@@ -126,7 +126,7 @@ class ListField(Field):
     def serialize(self, stream):
         self.length.serialize(stream)
         for field in self.value:
-            stream.write(field.serialize())
+            field.serialize(stream)
 
     def __iter__(self):
         return iter(self.value)
