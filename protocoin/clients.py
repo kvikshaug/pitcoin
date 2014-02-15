@@ -4,7 +4,7 @@ import os
 import socket
 
 from datatypes import messages, structures
-from exceptions import NodeDisconnectException, UnknownCommand, InvalidChecksum
+from exceptions import NodeDisconnected, UnknownCommand, InvalidChecksum
 
 from config import logger
 
@@ -145,7 +145,7 @@ class BitcoinBasicClient(object):
                     if self._running:
                         return
                     else:
-                        raise NodeDisconnectException("Node disconnected.")
+                        raise NodeDisconnected("Node disconnected.")
 
                 # Loop while there's more data after the parsed message. The next message may be complete, in which
                 # case we should read it right away instead of waiting for more data.
