@@ -1,9 +1,12 @@
 from io import BytesIO
+import sys
 import os
 import socket
 
 from datatypes import messages, structures
 from exceptions import NodeDisconnectException, UnknownCommand, InvalidChecksum
+
+from config import logger
 
 class BitcoinBasicClient(object):
     """The base class for a Bitcoin network client, this class
@@ -153,7 +156,9 @@ class BitcoinBasicClient(object):
                     if not more_data:
                         break
             except (InvalidChecksum, UnknownCommand) as e:
-                pass
+                logger.warning(u"Error parsing data packet: %s" % e.message,
+                    exc_info=sys.exc_info(),
+                )
 
 
 class BitcoinClient(BitcoinBasicClient):
