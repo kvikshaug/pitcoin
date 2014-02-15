@@ -65,8 +65,12 @@ class BitcoinBasicClient(object):
             self._buffer.seek(0, os.SEEK_END)
             return
 
+        # Read the payload and reset buffer
         payload = self._buffer.read(header.length)
+        remaining_data = self._buffer.read()
         self._buffer = StringIO()
+        self._buffer.write(remaining_data)
+
         self.handle_message_header(header, payload)
 
         # Verify the payload checksum
@@ -77,7 +81,7 @@ class BitcoinBasicClient(object):
 
         # Deserialize the message
         message = messages.deserialize(header.command, StringIO(payload))
-        return (header, message)
+        return (header, message, len(remaining_data) > 0)
 
     def send_message(self, message):
         """This method will serialize the message using the
@@ -120,14 +124,20 @@ class BitcoinBasicClient(object):
                 if len(data) <= 0:
                     raise NodeDisconnectException("Node disconnected.")
 
-                data = self.read_message()
-                if data is None:
-                    continue
+                # Loop while there's more data after the parsed message. The next message may be complete, in which
+                # case we should read it right away instead of waiting for more data.
+                while True:
+                    data = self.read_message()
+                    if data is None:
+                        # Incomplete buffer, wait for more data
+                        break
 
-                header, message = data
-                handle_func = getattr(self, "handle_%s" % header.command, None)
-                if handle_func:
-                    handle_func(header, message)
+                    header, message, more_data = data
+                    handle_func = getattr(self, "handle_%s" % header.command, None)
+                    if handle_func:
+                        handle_func(header, message)
+                    if not more_data:
+                        break
             except (InvalidChecksum, UnknownCommand) as e:
                 pass
 
