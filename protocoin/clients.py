@@ -2,7 +2,7 @@ from cStringIO import StringIO
 import os
 
 from datatypes import messages, structures
-from exceptions import NodeDisconnectException, UnknownCommand
+from exceptions import NodeDisconnectException, UnknownCommand, InvalidChecksum
 
 class BitcoinBasicClient(object):
     """The base class for a Bitcoin network client, this class
@@ -15,12 +15,12 @@ class BitcoinBasicClient(object):
     coin = "bitcoin"
 
     def __init__(self, socket):
-        self.socket = socket
-        self.buffer = StringIO()
+        self._socket = socket
+        self._buffer = StringIO()
 
     def close_stream(self):
         """This method will close the socket stream."""
-        self.socket.close()
+        self._socket.close()
 
     def handle_message_header(self, message_header, payload):
         """This method will be called for every message before the
@@ -39,45 +39,45 @@ class BitcoinBasicClient(object):
         """
         pass
 
-    def receive_message(self):
+    def read_message(self):
         """This method is called inside the loop() method to
         receive a message from the stream (socket) and then
         deserialize it."""
 
         # Calculate the size of the buffer
-        self.buffer.seek(0, os.SEEK_END)
-        buffer_size = self.buffer.tell()
+        self._buffer.seek(0, os.SEEK_END)
+        buffer_size = self._buffer.tell()
 
-        # Check if a complete header is present
+        # If a complete header isn't present, keep buffer and return to wait for more data
         if buffer_size < structures.MessageHeader.calcsize():
             return
 
         # Go to the beginning of the buffer
-        self.buffer.reset()
+        self._buffer.reset()
 
-        message_header = structures.MessageHeader()
-        message_header.deserialize(self.buffer)
-        total_length = structures.MessageHeader.calcsize() + message_header.length
+        # Deserialize the header
+        header = structures.MessageHeader()
+        header.deserialize(self._buffer)
+        total_length = structures.MessageHeader.calcsize() + header.length
 
-        # Incomplete message
+        # If incomplete message, keep buffer and return to wait for more data
         if buffer_size < total_length:
-            self.buffer.seek(0, os.SEEK_END)
+            self._buffer.seek(0, os.SEEK_END)
             return
 
-        payload = self.buffer.read(message_header.length)
-        self.buffer = StringIO()
-        self.handle_message_header(message_header, payload)
+        payload = self._buffer.read(header.length)
+        self._buffer = StringIO()
+        self.handle_message_header(header, payload)
 
+        # Verify the payload checksum
         payload_checksum = structures.MessageHeader.calc_checksum(payload)
+        if payload_checksum != header.checksum:
+            raise InvalidChecksum("The provided checksum '%s' doesn't match the calculated checksum '%s'" %
+                (header.checksum, payload_checksum))
 
-        # Check if the checksum is valid
-        if payload_checksum != message_header.checksum:
-            return (message_header, None)
-
-        try:
-            return (message_header, messages.deserialize(message_header.command, StringIO(payload)))
-        except UnknownCommand:
-            return (message_header, None)
+        # Deserialize the message
+        message = messages.deserialize(header.command, StringIO(payload))
+        return (header, message)
 
     def send_message(self, message):
         """This method will serialize the message using the
@@ -106,35 +106,31 @@ class BitcoinBasicClient(object):
         transmission.write(payload)
 
         # Cool, fire it away
-        self.socket.sendall(transmission.getvalue())
+        self._socket.sendall(transmission.getvalue())
         self.handle_send_message(message_header, message)
 
     def loop(self):
-        """This is the main method of the client, it will enter
-        in a receive/send loop."""
+        """The main receive/send loop."""
 
         while True:
-            data = self.socket.recv(1024*8)
+            try:
+                data = self._socket.recv(1024*8)
+                self._buffer.write(data)
 
-            if len(data) <= 0:
-                raise NodeDisconnectException("Node disconnected.")
+                if len(data) <= 0:
+                    raise NodeDisconnectException("Node disconnected.")
 
-            self.buffer.write(data)
-            data = self.receive_message()
+                data = self.read_message()
+                if data is None:
+                    continue
 
-            # Check if the message is still incomplete to parse
-            if data is None:
-                continue
+                header, message = data
+                handle_func = getattr(self, "handle_%s" % header.command, None)
+                if handle_func:
+                    handle_func(header, message)
+            except (InvalidChecksum, UnknownCommand) as e:
+                pass
 
-            # Check for the header and message
-            message_header, message = data
-            if message is None:
-                continue
-
-            handle_func_name = "handle_" + message_header.command
-            handle_func = getattr(self, handle_func_name, None)
-            if handle_func:
-                handle_func(message_header, message)
 
 class BitcoinClient(BitcoinBasicClient):
     """This class implements all the protocol rules needed

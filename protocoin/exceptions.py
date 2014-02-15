@@ -6,3 +6,6 @@ class NodeDisconnectException(Exception):
 class UnknownCommand(Exception):
     """Thrown when a message contains an unrecognized command"""
     pass
+
+class InvalidChecksum(Exception):
+    """Thrown when a parsed message has an invalid checksum"""
