@@ -80,7 +80,7 @@ class IPv4AddressTimestamp(DataModel):
         return "<%s Timestamp=[%s] Address=[%r]>" % \
             (self.__class__.__name__, time.ctime(self.timestamp), self.address)
 
-class Inventory(object):
+class Inventory(DataModel):
     """The Inventory representation."""
 
     def __init__(self, *args, **kwargs):
@@ -99,7 +99,7 @@ class Inventory(object):
         return "<%s Type=[%s] Hash=[%064x]>" % \
             (self.__class__.__name__, self.type_to_text(), self.inv_hash)
 
-class OutPoint(object):
+class OutPoint(DataModel):
     """The OutPoint of a transaction."""
 
     def __init__(self, *args, **kwargs):
@@ -111,7 +111,7 @@ class OutPoint(object):
         return "<%s Index=[%d] Hash=[%064x]>" % \
             (self.__class__.__name__, self.index, self.out_hash)
 
-class TxIn(object):
+class TxIn(DataModel):
     """The transaction input representation."""
 
     def __init__(self, *args, **kwargs):
@@ -123,7 +123,7 @@ class TxIn(object):
     def __repr__(self):
         return "<%s Sequence=[%d]>" % (self.__class__.__name__, self.sequence)
 
-class TxOut(object):
+class TxOut(DataModel):
     """The transaction output."""
 
     def __init__(self, *args, **kwargs):
@@ -138,7 +138,7 @@ class TxOut(object):
         return "<%s Value=[%.8f]>" % (self.__class__.__name__,
             self.get_btc_value())
 
-class BlockHeader(object):
+class BlockHeader(DataModel):
     """The header of the block."""
 
     def __init__(self, *args, **kwargs):
