@@ -137,32 +137,3 @@ class TxOut(DataModel):
     def __repr__(self):
         return "<%s Value=[%.8f]>" % (self.__class__.__name__,
             self.get_btc_value())
-
-class BlockHeader(DataModel):
-    """The header of the block."""
-
-    def __init__(self, *args, **kwargs):
-        self.version = fields.UInt32LEField(default=0)
-        self.prev_block = fields.Hash(default=0)
-        self.merkle_root = fields.Hash(default=0)
-        self.timestamp = fields.UInt32LEField(default=0)
-        self.bits = fields.UInt32LEField(default=0)
-        self.nonce = fields.UInt32LEField(default=0)
-        self.txns_count = fields.VariableIntegerField(default=0)
-        super(BlockHeader, self).__init__(*args, **kwargs)
-
-    def calculate_hash(self):
-        """This method will calculate the hash of the block."""
-        hash_fields = ["version", "prev_block", "merkle_root",
-            "timestamp", "bits", "nonce"]
-        from .serializers import BlockSerializer
-        serializer = BlockSerializer()
-        bin_data = serializer.serialize(self, hash_fields)
-        h = hashlib.sha256(bin_data).digest()
-        h = hashlib.sha256(h).digest()
-        return h[::-1].encode("hex_codec")
-
-    def __repr__(self):
-        return "<%s Version=[%d] Timestamp=[%s] Nonce=[%d] Hash=[%s] Tx Count=[%d]>" % \
-            (self.__class__.__name__, self.version, time.ctime(self.timestamp), self.nonce, self.calculate_hash(),
-            self.txns_count)

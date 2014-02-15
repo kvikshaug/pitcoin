@@ -137,7 +137,7 @@ class Tx(DataModel):
             % (self.__class__.__name__, self.version, self._locktime_to_text(),
                 len(self.tx_in), len(self.tx_out))
 
-class Block(structures.BlockHeader):
+class Block(DataModel):
     """The block message. This message contains all the transactions present in the block."""
     command = "block"
 
@@ -157,17 +157,28 @@ class Block(structures.BlockHeader):
     def __iter__(self):
         return __iter__(self.txns)
 
+    def calculate_hash(self):
+        """This method will calculate the hash of the block."""
+        hash_fields = ["version", "prev_block", "merkle_root",
+            "timestamp", "bits", "nonce"]
+        from .serializers import BlockSerializer
+        serializer = BlockSerializer()
+        bin_data = serializer.serialize(self, hash_fields)
+        h = hashlib.sha256(bin_data).digest()
+        h = hashlib.sha256(h).digest()
+        return h[::-1].encode("hex_codec")
+
     def __repr__(self):
         return "<%s Version=[%d] Timestamp=[%s] Nonce=[%d] Hash=[%s] Tx Count=[%d]>" % \
-            (self.__class__.__name__, self.version, time.ctime(self.timestamp),
-                self.nonce, self.calculate_hash(), len(self))
+            (self.__class__.__name__, self.version, time.ctime(self.timestamp), self.nonce,
+            self.calculate_hash(), len(self.txns))
 
 class HeaderVector(DataModel):
     """The header only vector."""
     command = "headers"
 
     def __init__(self, *args, **kwargs):
-        self.headers = fields.ListField(structures.BlockHeader, default=[])
+        self.headers = fields.ListField(structures.Block, default=[])
         super(HeaderVector, self).__init__(*args, **kwargs)
 
     def __repr__(self):
