@@ -36,10 +36,12 @@ class BitcoinBasicClient(object):
 
         self._socket = sock
         self._buffer = BytesIO()
+        self._running = True
 
-    def close_stream(self):
-        """This method will close the socket stream."""
-        self._socket.close()
+    def disconnect(self):
+        """Disconnect from the peer node"""
+        self._running = False
+        self._socket.shutdown(socket.SHUT_RDWR)
 
     def handle_message_header(self, header, payload):
         """This method will be called for every message before the
@@ -134,13 +136,16 @@ class BitcoinBasicClient(object):
     def loop(self):
         """The main receive/send loop."""
 
-        while True:
+        while self._running:
             try:
                 data = self._socket.recv(1024*8)
                 self._buffer.write(data)
 
                 if len(data) <= 0:
-                    raise NodeDisconnectException("Node disconnected.")
+                    if self._running:
+                        return
+                    else:
+                        raise NodeDisconnectException("Node disconnected.")
 
                 # Loop while there's more data after the parsed message. The next message may be complete, in which
                 # case we should read it right away instead of waiting for more data.
