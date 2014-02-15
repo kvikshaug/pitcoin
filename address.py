@@ -6,6 +6,7 @@ import time
 
 from protocoin.clients import BitcoinClient
 from protocoin.datatypes import messages
+from protocoin.exceptions import NodeDisconnected
 
 from models import Node
 
@@ -55,7 +56,7 @@ class AddressBook(threading.Thread):
                 bootstrapper.seed_client = client
                 client.handshake()
                 client.loop()
-            except socket.error:
+            except (NodeDisconnected, socket.error):
                 pass
 
     @staticmethod
