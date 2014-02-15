@@ -1,4 +1,4 @@
-from cStringIO import StringIO
+from io import BytesIO
 import os
 
 from datatypes import messages, structures
@@ -16,7 +16,7 @@ class BitcoinBasicClient(object):
 
     def __init__(self, socket):
         self._socket = socket
-        self._buffer = StringIO()
+        self._buffer = BytesIO()
 
     def close_stream(self):
         """This method will close the socket stream."""
@@ -53,7 +53,7 @@ class BitcoinBasicClient(object):
             return
 
         # Go to the beginning of the buffer
-        self._buffer.reset()
+        self._buffer.seek(0, os.SEEK_SET)
 
         # Deserialize the header
         header = structures.MessageHeader()
@@ -68,8 +68,7 @@ class BitcoinBasicClient(object):
         # Read the payload and reset buffer
         payload = self._buffer.read(header.length)
         remaining_data = self._buffer.read()
-        self._buffer = StringIO()
-        self._buffer.write(remaining_data)
+        self._buffer = BytesIO(remaining_data)
 
         self.handle_message_header(header, payload)
 
@@ -80,7 +79,7 @@ class BitcoinBasicClient(object):
                 (header.checksum, payload_checksum))
 
         # Deserialize the message
-        message = messages.deserialize(header.command, StringIO(payload))
+        message = messages.deserialize(header.command, BytesIO(payload))
         return (header, message, len(remaining_data) > 0)
 
     def send_message(self, message):
@@ -94,7 +93,7 @@ class BitcoinBasicClient(object):
         message_header.set_coin(self.coin)
 
         # Serialize the payload
-        payload_stream = StringIO()
+        payload_stream = BytesIO()
         message.serialize(payload_stream)
         payload = payload_stream.getvalue()
         payload_checksum = structures.MessageHeader.calc_checksum(payload)
@@ -105,7 +104,7 @@ class BitcoinBasicClient(object):
         message_header.checksum = payload_checksum
 
         # Now serialize the header
-        transmission = StringIO()
+        transmission = BytesIO()
         message_header.serialize(transmission)
         transmission.write(payload)
 
