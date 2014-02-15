@@ -41,24 +41,32 @@ class AddressBook(threading.Thread):
         # "testnet-seed.bluematt.me",
     ]
 
-    def bootstrap(self):
+    @staticmethod
+    def bootstrap():
         """
         Try to get addresses from a random seed node. This thread blocks on the loop, so run a separate one
         which will check if addresses are received or disconnect if timeout is reached.
         """
-        BootstrapperThread(self).start()
+        bootstrapper = BootstrapperThread()
+        bootstrapper.start()
         while len(AddressBook.addresses) == 0:
             try:
                 client = AddressClient(random.choice(AddressBook.seed_addresses))
-                self.seed_client = client
+                bootstrapper.seed_client = client
                 client.handshake()
                 client.loop()
             except socket.error:
                 pass
 
-    def get_node(self):
-        viable_address = max(self.addresses, key=lambda a: a.time)
-        self.addresses.remove(viable_address)
+    @staticmethod
+    def keep_updated():
+        AddressBook.updater = AddressBook()
+        AddressBook.updater.start()
+
+    @staticmethod
+    def get_node():
+        viable_address = max(AddressBook.addresses, key=lambda a: a.time)
+        AddressBook.addresses.remove(viable_address)
         return viable_address
 
     def run(self):
@@ -69,9 +77,9 @@ class BootstrapperThread(threading.Thread):
     Runs a loop and disconnects from the current seed node whenever we either received the addresses
     we want or the timeout is reached
     """
-    def __init__(self, address_book, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(BootstrapperThread, self).__init__(*args, **kwargs)
-        self.address_book = address_book
+        self.seed_client = None
 
     def run(self):
         timeout = datetime.now() + timedelta(seconds=5)
@@ -80,10 +88,10 @@ class BootstrapperThread(threading.Thread):
 
             if len(AddressBook.addresses) > 0:
                 # Ah, we've got some addresses, disconnect from the seed node and stop
-                self.address_book.seed_client.disconnect()
+                self.seed_client.disconnect()
                 return
 
             if datetime.now() > timeout:
                 # Give up on the current seed node client and try the next one
-                self.address_book.seed_client.disconnect()
+                self.seed_client.disconnect()
                 timeout = datetime.now() + timedelta(seconds=10)

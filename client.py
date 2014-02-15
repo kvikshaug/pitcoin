@@ -32,10 +32,9 @@ from address import AddressBook
 #         print("-> %s" % message_header)
 
 print("1. Fetching addresses...")
-address_book = AddressBook()
-address_book.bootstrap()
-address_book.start()
-print("   Got %s initial addresses." % len(address_book.addresses))
+AddressBook.bootstrap()
+AddressBook.keep_updated()
+print("   Got %s initial addresses." % len(AddressBook.addresses))
 
 print("2. Synchronizing all blocks...")
 address = address_book.get_address()
