@@ -11,7 +11,7 @@ class DataModel(object):
             self.deserialize(stream)
         else:
             for field, value in kwargs.items():
-                self.__setattr__(field, value)
+                setattr(self, field, value)
 
     def __getattribute__(self, name):
         """Get a field value, or fallback to the normal attribute if not a datamodel field"""
