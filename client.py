@@ -4,6 +4,7 @@ from protocoin.clients import BitcoinClient
 from protocoin.datatypes import messages
 
 from address import AddressBook
+from sync import Synchronizer
 
 
 # class BTCClient(BitcoinClient):
@@ -37,7 +38,9 @@ AddressBook.keep_updated()
 print("   Got %s initial addresses." % len(AddressBook.addresses))
 
 print("2. Synchronizing all blocks...")
-address = address_book.get_address()
+Synchronizer.synchronize()
+
+print("3. Done!")
 
 
 

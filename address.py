@@ -68,7 +68,9 @@ class AddressBook(threading.Thread):
     def get_node():
         viable_address = max(AddressBook.addresses, key=lambda a: a.time)
         AddressBook.addresses.remove(viable_address)
-        return viable_address
+        # Test against as for now
+        # return viable_address
+        return Node(ip_address="as", port="18333", time=None)
 
     def run(self):
         pass
