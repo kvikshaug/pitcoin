@@ -165,14 +165,11 @@ class VariableIntegerField(Field):
         int_id_raw = stream.read(struct.calcsize("<B"))
         int_id = struct.unpack("<B", int_id_raw)[0]
         if int_id == 0xFD:
-            data = stream.read(2)
-            int_id = struct.unpack("<H", data)[0]
+            int_id = struct.unpack("<H", stream.read(2))[0]
         if int_id == 0xFE:
-            data = stream.read(4)
-            int_id = struct.unpack("<I", data)[0]
+            int_id = struct.unpack("<I", stream.read(4))[0]
         if int_id == 0xFF:
-            data = stream.read(8)
-            int_id = struct.unpack("<Q", data)[0]
+            int_id = struct.unpack("<Q", stream.read(8))[0]
         self.value = int(int_id)
 
     def serialize(self, stream):
@@ -230,6 +227,5 @@ class Hash(Field):
     def serialize(self, stream):
         hash_ = self.value
         for i in range(8):
-            pack_data = struct.pack(self.datatype, hash_ & 0xFFFFFFFF)
-            stream.write(pack_data)
+            stream.write(struct.pack(self.datatype, hash_ & 0xFFFFFFFF))
             hash_ >>= 32
