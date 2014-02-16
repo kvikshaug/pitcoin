@@ -12,16 +12,13 @@ from ..exceptions import UnknownCommand
 
 class Version(DataModel):
     command = "version"
-
-    def __init__(self, *args, **kwargs):
-        self.version = fields.Int32LEField(default=values.PROTOCOL_VERSION)
-        self.services = fields.UInt64LEField(default=values.SERVICES["NODE_NETWORK"])
-        self.timestamp = fields.Int64LEField(default=time.time())
-        self.addr_recv = structures.IPv4Address()
-        self.addr_from = structures.IPv4Address()
-        self.nonce = fields.UInt64LEField(default=random.randint(0, 2**32-1))
-        self.user_agent = fields.VariableStringField(default="/Perone:0.0.1/")
-        super(Version, self).__init__(*args, **kwargs)
+    version = fields.Int32LEField(default=values.PROTOCOL_VERSION)
+    services = fields.UInt64LEField(default=values.SERVICES["NODE_NETWORK"])
+    timestamp = fields.Int64LEField(default=time.time())
+    addr_recv = structures.IPv4Address()
+    addr_from = structures.IPv4Address()
+    nonce = fields.UInt64LEField(default=random.randint(0, 2**32-1))
+    user_agent = fields.VariableStringField(default="/Perone:0.0.1/")
 
     def _services_to_text(self):
         """Converts the services field into a textual
@@ -46,30 +43,21 @@ class VerAck(DataModel):
 
 class Ping(DataModel):
     command = "ping"
-
-    def __init__(self, *args, **kwargs):
-        self.nonce = fields.UInt64LEField(default=random.randint(0, 2**32-1))
-        super(Ping, self).__init__(*args, **kwargs)
+    nonce = fields.UInt64LEField(default=random.randint(0, 2**32-1))
 
     def __repr__(self):
         return "<%s Nonce=[%d]>" % (self.__class__.__name__, self.nonce)
 
 class Pong(DataModel):
     command = "pong"
-
-    def __init__(self, *args, **kwargs):
-        self.nonce = fields.UInt64LEField(default=random.randint(0, 2**32-1))
-        super(Pong, self).__init__(*args, **kwargs)
+    nonce = fields.UInt64LEField(default=random.randint(0, 2**32-1))
 
     def __repr__(self):
         return "<%s Nonce=[%d]>" % (self.__class__.__name__, self.nonce)
 
 class InventoryVector(DataModel):
     command = "inv"
-
-    def __init__(self, *args, **kwargs):
-        self.inventory = fields.ListField(structures.Inventory, default=[])
-        super(InventoryVector, self).__init__(*args, **kwargs)
+    inventory = fields.ListField(structures.Inventory, default=[])
 
     def __repr__(self):
         return "<%s Count=[%d]>" % (self.__class__.__name__, len(self))
@@ -82,10 +70,7 @@ class InventoryVector(DataModel):
 
 class AddressVector(DataModel):
     command = "addr"
-
-    def __init__(self, *args, **kwargs):
-        self.addresses = fields.ListField(structures.IPv4AddressTimestamp, default=[])
-        super(AddressVector, self).__init__(*args, **kwargs)
+    addresses = fields.ListField(structures.IPv4AddressTimestamp, default=[])
 
     def __repr__(self):
         return "<%s Count=[%d]>" % (self.__class__.__name__, len(self))
@@ -97,20 +82,13 @@ class AddressVector(DataModel):
         return iter(self.addresses)
 
 class GetData(DataModel):
-    """GetData message command."""
     command = "getdata"
-
-    def __init__(self, *args, **kwargs):
-        self.inventory = fields.ListField(structures.Inventory, default=[])
-        super(GetData, self).__init__(*args, **kwargs)
+    inventory = fields.ListField(structures.Inventory, default=[])
 
 class NotFound(GetData):
     """NotFound command message."""
     command = "notfound"
-
-    def __init__(self, *args, **kwargs):
-        self.inventory = fields.ListField(structures.Inventory, default=[])
-        super(NotFound, self).__init__(*args, **kwargs)
+    inventory = fields.ListField(structures.Inventory, default=[])
 
     def __repr__(self):
         return "<%s Inv Count[%d]>" % (self.__class__.__name__, len(self.inventory))
@@ -119,13 +97,10 @@ class Tx(DataModel):
     """The main transaction representation, this object will
     contain all the inputs and outputs of the transaction."""
     command = "tx"
-
-    def __init__(self, *args, **kwargs):
-        self.version = fields.UInt32LEField(default=0)
-        self.tx_in = fields.ListField(structures.TxIn, default=[])
-        self.tx_out = fields.ListField(structures.TxOut, default=[])
-        self.lock_time = fields.UInt32LEField(default=0)
-        super(Tx, self).__init__(*args, **kwargs)
+    version = fields.UInt32LEField(default=0)
+    tx_in = fields.ListField(structures.TxIn, default=[])
+    tx_out = fields.ListField(structures.TxOut, default=[])
+    lock_time = fields.UInt32LEField(default=0)
 
     def _locktime_to_text(self):
         """Converts the lock-time to textual representation."""
@@ -146,16 +121,13 @@ class Tx(DataModel):
 class Block(DataModel):
     """The block message. This message contains all the transactions present in the block."""
     command = "block"
-
-    def __init__(self, *args, **kwargs):
-        self.version = fields.UInt32LEField(default=0)
-        self.prev_block = fields.Hash(default=0)
-        self.merkle_root = fields.Hash(default=0)
-        self.timestamp = fields.UInt32LEField(default=0)
-        self.bits = fields.UInt32LEField(default=0)
-        self.nonce = fields.UInt32LEField(default=0)
-        self.txns = fields.ListField(Tx, default=[])
-        super(Block, self).__init__(*args, **kwargs)
+    version = fields.UInt32LEField(default=0)
+    prev_block = fields.Hash(default=0)
+    merkle_root = fields.Hash(default=0)
+    timestamp = fields.UInt32LEField(default=0)
+    bits = fields.UInt32LEField(default=0)
+    nonce = fields.UInt32LEField(default=0)
+    txns = fields.ListField(Tx, default=[])
 
     def __len__(self):
         return len(self.txns)
@@ -180,10 +152,7 @@ class Block(DataModel):
 class HeaderVector(DataModel):
     """The header only vector."""
     command = "headers"
-
-    def __init__(self, *args, **kwargs):
-        self.headers = fields.ListField(structures.Block, default=[])
-        super(HeaderVector, self).__init__(*args, **kwargs)
+    headers = fields.ListField(Block, default=[])
 
     def __repr__(self):
         return "<%s Count=[%d]>" % (self.__class__.__name__, len(self))
@@ -204,12 +173,9 @@ class GetAddr(DataModel):
 
 class GetBlocks(DataModel):
     command = "getblocks"
-
-    def __init__(self, *args, **kwargs):
-        self.version = fields.UInt32LEField(default=values.PROTOCOL_VERSION)
-        self.block_locator_hashes = fields.ListField(fields.Hash, default=[])
-        self.hash_stop = fields.Hash(default=0)
-        super(GetBlocks, self).__init__(*args, **kwargs)
+    version = fields.UInt32LEField(default=values.PROTOCOL_VERSION)
+    block_locator_hashes = fields.ListField(fields.Hash, default=[])
+    hash_stop = fields.Hash(default=0)
 
     def __repr__(self):
         return "<%s Version=[%d] HashCount=[%d]>" % \

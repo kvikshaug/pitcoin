@@ -7,13 +7,10 @@ import fields, values
 
 class MessageHeader(DataModel):
     """The header of all bitcoin messages."""
-
-    def __init__(self, *args, **kwargs):
-        self.magic = fields.UInt32LEField(default=values.MAGIC_VALUES['bitcoin'])
-        self.command = fields.FixedStringField(length=12, default=None)
-        self.length = fields.UInt32LEField(default=0)
-        self.checksum = fields.UInt32LEField(default=0)
-        super(MessageHeader, self).__init__(*args, **kwargs)
+    magic = fields.UInt32LEField(default=values.MAGIC_VALUES['bitcoin'])
+    command = fields.FixedStringField(length=12, default=None)
+    length = fields.UInt32LEField(default=0)
+    checksum = fields.UInt32LEField(default=0)
 
     def set_coin(self, coin):
         self.magic = values.MAGIC_VALUES[coin]
@@ -46,12 +43,9 @@ class MessageHeader(DataModel):
 
 class IPv4Address(DataModel):
     """The IPv4 Address (without timestamp)."""
-
-    def __init__(self, *args, **kwargs):
-        self.services = fields.UInt64LEField(default=values.SERVICES["NODE_NETWORK"])
-        self.ip_address = fields.IPv4AddressField(default="0.0.0.0")
-        self.port = fields.UInt16BEField(default=8333)
-        super(IPv4Address, self).__init__(*args, **kwargs)
+    services = fields.UInt64LEField(default=values.SERVICES["NODE_NETWORK"])
+    ip_address = fields.IPv4AddressField(default="0.0.0.0")
+    port = fields.UInt16BEField(default=8333)
 
     def _services_to_text(self):
         """Converts the services field into a textual
@@ -70,11 +64,8 @@ class IPv4Address(DataModel):
 
 class IPv4AddressTimestamp(DataModel):
     """The IPv4 Address with timestamp."""
-
-    def __init__(self, *args, **kwargs):
-        self.timestamp = fields.UInt32LEField(default=time.time())
-        self.address = IPv4Address()
-        super(DataModel, self).__init__(*args, **kwargs)
+    timestamp = fields.UInt32LEField(default=time.time())
+    address = IPv4Address()
 
     def __repr__(self):
         return "<%s Timestamp=[%s] Address=[%r]>" % \
@@ -82,11 +73,8 @@ class IPv4AddressTimestamp(DataModel):
 
 class Inventory(DataModel):
     """The Inventory representation."""
-
-    def __init__(self, *args, **kwargs):
-        self.inv_type = fields.UInt32LEField(default=values.INVENTORY_TYPE["MSG_TX"])
-        self.inv_hash = fields.Hash(default=0)
-        super(Inventory, self).__init__(*args, **kwargs)
+    inv_type = fields.UInt32LEField(default=values.INVENTORY_TYPE["MSG_TX"])
+    inv_hash = fields.Hash(default=0)
 
     def type_to_text(self):
         """Converts the inventory type to text representation."""
@@ -101,11 +89,8 @@ class Inventory(DataModel):
 
 class OutPoint(DataModel):
     """The OutPoint of a transaction."""
-
-    def __init__(self, *args, **kwargs):
-        self.out_hash = fields.Hash(default=0)
-        self.index = fields.UInt32LEField(default=0)
-        super(OutPoint, self).__init__(*args, **kwargs)
+    out_hash = fields.Hash(default=0)
+    index = fields.UInt32LEField(default=0)
 
     def __repr__(self):
         return "<%s Index=[%d] Hash=[%064x]>" % \
@@ -113,23 +98,17 @@ class OutPoint(DataModel):
 
 class TxIn(DataModel):
     """The transaction input representation."""
-
-    def __init__(self, *args, **kwargs):
-        self.previous_output = OutPoint()
-        self.signature_script = fields.VariableStringField(default="Empty")
-        self.sequence = fields.UInt32LEField(default=0)
-        super(TxIn, self).__init__(*args, **kwargs)
+    previous_output = OutPoint()
+    signature_script = fields.VariableStringField(default="Empty")
+    sequence = fields.UInt32LEField(default=0)
 
     def __repr__(self):
         return "<%s Sequence=[%d]>" % (self.__class__.__name__, self.sequence)
 
 class TxOut(DataModel):
     """The transaction output."""
-
-    def __init__(self, *args, **kwargs):
-        self.value = fields.Int64LEField(default=0)
-        self.pk_script = fields.VariableStringField(default="Empty")
-        super(TxOut, self).__init__(*args, **kwargs)
+    value = fields.Int64LEField(default=0)
+    pk_script = fields.VariableStringField(default="Empty")
 
     def get_btc_value(self):
         return self.value//100000000 + self.value%100000000/100000000.0
