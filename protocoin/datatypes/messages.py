@@ -2,6 +2,9 @@ import time
 import random
 import sys
 import inspect
+from io import BytesIO
+import binascii
+import hashlib
 
 from meta import DataModel
 import structures, values, fields
@@ -161,15 +164,13 @@ class Block(DataModel):
         return __iter__(self.txns)
 
     def calculate_hash(self):
-        """This method will calculate the hash of the block."""
-        hash_fields = ["version", "prev_block", "merkle_root",
-            "timestamp", "bits", "nonce"]
-        from .serializers import BlockSerializer
-        serializer = BlockSerializer()
-        bin_data = serializer.serialize(self, hash_fields)
-        h = hashlib.sha256(bin_data).digest()
+        hash_fields = ["version", "prev_block", "merkle_root", "timestamp", "bits", "nonce"]
+        stream = BytesIO()
+        for field in hash_fields:
+            self._get_field_instance(field).serialize(stream)
+        h = hashlib.sha256(stream.getvalue()).digest()
         h = hashlib.sha256(h).digest()
-        return h[::-1].encode("hex_codec")
+        return binascii.hexlify(h[::-1])
 
     def __repr__(self):
         return "<%s Version=[%d] Timestamp=[%s] Nonce=[%d] Hash=[%s] Tx Count=[%d]>" % \
