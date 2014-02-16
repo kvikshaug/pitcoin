@@ -109,6 +109,9 @@ class NotFound(GetData):
         self.inventory = fields.ListField(structures.Inventory, default=[])
         super(NotFound, self).__init__(*args, **kwargs)
 
+    def __repr__(self):
+        return "<%s Inv Count[%d]>" % (self.__class__.__name__, len(self.inventory))
+
 class Tx(DataModel):
     """The main transaction representation, this object will
     contain all the inputs and outputs of the transaction."""
