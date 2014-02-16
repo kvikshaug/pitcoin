@@ -202,6 +202,19 @@ class GetAddr(DataModel):
     """The getaddr command."""
     command = "getaddr"
 
+class GetBlocks(DataModel):
+    command = "getblocks"
+
+    def __init__(self, *args, **kwargs):
+        self.version = fields.UInt32LEField(default=values.PROTOCOL_VERSION)
+        self.block_locator_hashes = fields.ListField(fields.Hash, default=[])
+        self.hash_stop = fields.Hash(default=0)
+        super(GetBlocks, self).__init__(*args, **kwargs)
+
+    def __repr__(self):
+        return "<%s Version=[%d] HashCount=[%d]>" % \
+            (self.__class__.__name__, self.version, self.hash_count)
+
 MESSAGES = {c.command: c for name, c in inspect.getmembers(sys.modules[__name__]) if inspect.isclass(c) and issubclass(c, DataModel) and c is not DataModel}
 def deserialize(command, stream):
     try:
