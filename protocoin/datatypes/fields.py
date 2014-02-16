@@ -166,9 +166,9 @@ class VariableIntegerField(Field):
         int_id = struct.unpack("<B", int_id_raw)[0]
         if int_id == 0xFD:
             int_id = struct.unpack("<H", stream.read(2))[0]
-        if int_id == 0xFE:
+        elif int_id == 0xFE:
             int_id = struct.unpack("<I", stream.read(4))[0]
-        if int_id == 0xFF:
+        elif int_id == 0xFF:
             int_id = struct.unpack("<Q", stream.read(8))[0]
         self.value = int(int_id)
 
