@@ -89,10 +89,18 @@ class BootstrapperThread(threading.Thread):
 
             if len(AddressBook.addresses) > 0:
                 # Ah, we've got some addresses, disconnect from the seed node and stop
-                self.seed_client.disconnect()
+                try:
+                    self.seed_client.disconnect()
+                except socket.error:
+                    # The client may have already disconnected for some reason, or other error
+                    pass
                 return
 
             if datetime.now() > timeout:
                 # Give up on the current seed node client and try the next one
-                self.seed_client.disconnect()
+                try:
+                    self.seed_client.disconnect()
+                except socket.error:
+                    # The client may have already disconnected for some reason, or other error
+                    pass
                 timeout = datetime.now() + timedelta(seconds=10)
