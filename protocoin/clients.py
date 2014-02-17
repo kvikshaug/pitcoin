@@ -143,9 +143,10 @@ class BitcoinBasicClient(object):
 
                 if len(data) <= 0:
                     if self._running:
-                        return
-                    else:
                         raise NodeDisconnected("Node disconnected.")
+                    else:
+                        # Looks like an intentional disconnect, just return
+                        return
 
                 # Loop while there's more data after the parsed message. The next message may be complete, in which
                 # case we should read it right away instead of waiting for more data.
