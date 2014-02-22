@@ -64,7 +64,7 @@ class IPv4Address(DataModel):
 
 class IPv4AddressTimestamp(DataModel):
     """The IPv4 Address with timestamp."""
-    timestamp = fields.UInt32LEField(default=time.time())
+    timestamp = fields.UInt32LEField(default=lambda: time.time())
     address = IPv4Address()
 
     def __repr__(self):

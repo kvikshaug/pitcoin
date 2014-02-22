@@ -15,6 +15,10 @@ class DataModel(object):
             if isinstance(field, fields.Field) or isinstance(field, DataModel):
                 self._fields[field_name] = copy.deepcopy(field)
 
+            # If this is a field, set the new default value which may or may not differ
+            if isinstance(field, fields.Field):
+                field.set_value(field.get_default())
+
         # Set the field order, which is used when serializing
         self.order = fields.Field.order
         fields.Field.order += 1

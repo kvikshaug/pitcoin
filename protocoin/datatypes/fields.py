@@ -9,7 +9,15 @@ class Field(object):
         self.order = Field.order
         Field.order += 1
 
-        self.set_value(default)
+        # Save the default field value, which may be an actual value or a callable
+        self.default = default
+        self.set_value(self.get_default())
+
+    def get_default(self):
+        if callable(self.default):
+            return self.default()
+        else:
+            return self.default
 
     def set_value(self, value):
         """Set the value directly"""

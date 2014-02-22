@@ -14,10 +14,10 @@ class Version(DataModel):
     command = "version"
     version = fields.Int32LEField(default=values.PROTOCOL_VERSION)
     services = fields.UInt64LEField(default=values.SERVICES["NODE_NETWORK"])
-    timestamp = fields.Int64LEField(default=time.time())
+    timestamp = fields.Int64LEField(default=lambda: time.time())
     addr_recv = structures.IPv4Address()
     addr_from = structures.IPv4Address()
-    nonce = fields.UInt64LEField(default=random.randint(0, 2**32-1))
+    nonce = fields.UInt64LEField(default=lambda: random.randint(0, 2**32-1))
     user_agent = fields.VariableStringField(default="/Perone:0.0.1/")
 
     def _services_to_text(self):
@@ -43,14 +43,14 @@ class VerAck(DataModel):
 
 class Ping(DataModel):
     command = "ping"
-    nonce = fields.UInt64LEField(default=random.randint(0, 2**32-1))
+    nonce = fields.UInt64LEField(default=lambda: random.randint(0, 2**32-1))
 
     def __repr__(self):
         return "<%s Nonce=[%d]>" % (self.__class__.__name__, self.nonce)
 
 class Pong(DataModel):
     command = "pong"
-    nonce = fields.UInt64LEField(default=random.randint(0, 2**32-1))
+    nonce = fields.UInt64LEField(default=lambda: random.randint(0, 2**32-1))
 
     def __repr__(self):
         return "<%s Nonce=[%d]>" % (self.__class__.__name__, self.nonce)
