@@ -57,7 +57,7 @@ class Pong(DataModel):
 
 class InventoryVector(DataModel):
     command = "inv"
-    inventory = fields.ListField(structures.Inventory, default=[])
+    inventory = fields.ListField(structures.Inventory)
 
     def __repr__(self):
         return "<%s Count=[%d]>" % (self.__class__.__name__, len(self))
@@ -70,7 +70,7 @@ class InventoryVector(DataModel):
 
 class AddressVector(DataModel):
     command = "addr"
-    addresses = fields.ListField(structures.IPv4AddressTimestamp, default=[])
+    addresses = fields.ListField(structures.IPv4AddressTimestamp)
 
     def __repr__(self):
         return "<%s Count=[%d]>" % (self.__class__.__name__, len(self))
@@ -83,12 +83,12 @@ class AddressVector(DataModel):
 
 class GetData(DataModel):
     command = "getdata"
-    inventory = fields.ListField(structures.Inventory, default=[])
+    inventory = fields.ListField(structures.Inventory)
 
 class NotFound(GetData):
     """NotFound command message."""
     command = "notfound"
-    inventory = fields.ListField(structures.Inventory, default=[])
+    inventory = fields.ListField(structures.Inventory)
 
     def __repr__(self):
         return "<%s Inv Count[%d]>" % (self.__class__.__name__, len(self.inventory))
@@ -98,8 +98,8 @@ class Tx(DataModel):
     contain all the inputs and outputs of the transaction."""
     command = "tx"
     version = fields.UInt32LEField(default=0)
-    tx_in = fields.ListField(structures.TxIn, default=[])
-    tx_out = fields.ListField(structures.TxOut, default=[])
+    tx_in = fields.ListField(structures.TxIn)
+    tx_out = fields.ListField(structures.TxOut)
     lock_time = fields.UInt32LEField(default=0)
 
     def _locktime_to_text(self):
@@ -127,7 +127,7 @@ class Block(DataModel):
     timestamp = fields.UInt32LEField(default=0)
     bits = fields.UInt32LEField(default=0)
     nonce = fields.UInt32LEField(default=0)
-    txns = fields.ListField(Tx, default=[])
+    txns = fields.ListField(Tx)
 
     def __len__(self):
         return len(self.txns)
@@ -152,7 +152,7 @@ class Block(DataModel):
 class HeaderVector(DataModel):
     """The header only vector."""
     command = "headers"
-    headers = fields.ListField(Block, default=[])
+    headers = fields.ListField(Block)
 
     def __repr__(self):
         return "<%s Count=[%d]>" % (self.__class__.__name__, len(self))
@@ -174,7 +174,7 @@ class GetAddr(DataModel):
 class GetBlocks(DataModel):
     command = "getblocks"
     version = fields.UInt32LEField(default=values.PROTOCOL_VERSION)
-    block_locator_hashes = fields.ListField(fields.Hash, default=[])
+    block_locator_hashes = fields.ListField(fields.Hash)
     hash_stop = fields.Hash(default=0)
 
     def __repr__(self):

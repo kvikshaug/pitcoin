@@ -104,7 +104,7 @@ class ListField(Field):
     def __init__(self, field_class, *args, **kwargs):
         self.length = VariableIntegerField()
         self.field_class = field_class
-        super(ListField, self).__init__(*args, **kwargs)
+        super(ListField, self).__init__(default=[], *args, **kwargs)
 
     def set_value(self, value):
         self.length.set_value(len(value))
