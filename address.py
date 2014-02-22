@@ -49,6 +49,7 @@ class AddressBook(threading.Thread):
         which will check if addresses are received or disconnect if timeout is reached.
         """
         bootstrapper = BootstrapperThread()
+        bootstrapper.daemon = True
         bootstrapper.start()
         while len(AddressBook.addresses) == 0:
             try:
@@ -64,6 +65,7 @@ class AddressBook(threading.Thread):
     @staticmethod
     def keep_updated():
         AddressBook.updater = AddressBook()
+        AddressBook.updater.daemon = True
         AddressBook.updater.start()
 
     @staticmethod
