@@ -138,8 +138,8 @@ class Block(DataModel):
     def calculate_hash(self):
         hash_fields = ["version", "prev_block", "merkle_root", "timestamp", "bits", "nonce"]
         stream = BytesIO()
-        for field in hash_fields:
-            self._get_field_instance(field).serialize(stream)
+        for field_name in hash_fields:
+            self._fields[field_name].serialize(stream)
         h = hashlib.sha256(stream.getvalue()).digest()
         h = hashlib.sha256(h).digest()
         return binascii.hexlify(h[::-1])
