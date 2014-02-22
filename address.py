@@ -52,12 +52,14 @@ class AddressBook(threading.Thread):
         bootstrapper.start()
         while len(AddressBook.addresses) == 0:
             try:
-                client = AddressClient(random.choice(AddressBook.seed_addresses))
+                current_seed = random.choice(AddressBook.seed_addresses)
+                client = AddressClient(current_seed)
                 bootstrapper.seed_client = client
                 client.handshake()
                 client.loop()
-            except (NodeDisconnected, socket.error):
-                pass
+            except (NodeDisconnected, socket.error) as e:
+                print("Connection to seed node '%s' failed: %s - retrying in 10 seconds." % (current_seed, e))
+                time.sleep(10)
 
     @staticmethod
     def keep_updated():
