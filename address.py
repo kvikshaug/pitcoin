@@ -85,7 +85,7 @@ class BootstrapperThread(threading.Thread):
         self.seed_client = None
 
     def run(self):
-        timeout = datetime.now() + timedelta(seconds=5)
+        timeout = datetime.now() + timedelta(seconds=40)
         while True:
             time.sleep(1)
 
