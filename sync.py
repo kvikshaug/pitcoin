@@ -41,7 +41,7 @@ class Synchronizer(object):
             Synchronizer.blocks = json.loads(f.read())
 
         node = AddressBook.get_node()
-        client = SyncClient(node.ip_address)
+        client = SyncClient(node.ip_address, node.port)
         client.handshake()
         client.loop()
 

@@ -72,7 +72,7 @@ class AddressBook(threading.Thread):
         AddressBook.addresses.remove(viable_address)
         # Test against as for now
         # return viable_address
-        return Node(ip_address="as", port="18333", time=None)
+        return Node(ip_address="as", port=18333, time=None)
 
     def run(self):
         pass
