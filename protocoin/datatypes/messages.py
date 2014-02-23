@@ -144,6 +144,20 @@ class Block(DataModel):
         h = hashlib.sha256(h).digest()
         return binascii.hexlify(h[::-1])
 
+    def calculate_claimed_target(self):
+        """Calculates the target based on the claimed difficulty bits, which should normally not be trusted"""
+        h = hex(self.bits)[2:]
+        c1, c2 = int(h[:2], 16), int(h[2:], 16)
+        return c2 * 2 ** (8 * (c1 - 3))
+
+    def validate_claimed_proof_of_work(self):
+        """Validate proof of work based on the difficulty claimed by the block creator"""
+        return self.validate_proof_of_work(self.calculate_claimed_target())
+
+    def validate_proof_of_work(self, target):
+        """Validate proof of work based on the given difficulty"""
+        return int(self.calculate_hash(), 16) <= target
+
     def __repr__(self):
         return "<%s Version=[%d] Timestamp=[%s] Nonce=[%d] Hash=[%s] Tx Count=[%d]>" % \
             (self.__class__.__name__, self.version, time.ctime(self.timestamp), self.nonce,
