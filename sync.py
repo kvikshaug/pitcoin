@@ -7,7 +7,7 @@ from address import AddressBook
 
 class SyncClient(BitcoinClient):
     def __init__(self, *args, **kwargs):
-        super(SyncClient, self).__init__(*args, **kwargs)
+        super(SyncClient, self).__init__(coin='bitcoin_testnet3', *args, **kwargs)
         self.inv_queue = []
 
     def on_handshake(self):
