@@ -9,6 +9,7 @@ import hashlib
 from meta import DataModel
 import structures, values, fields
 from ..exceptions import UnknownCommand
+from .. import util
 
 class Version(DataModel):
     command = "version"
@@ -146,9 +147,7 @@ class Block(DataModel):
 
     def calculate_claimed_target(self):
         """Calculates the target based on the claimed difficulty bits, which should normally not be trusted"""
-        h = hex(self.bits)[2:]
-        c1, c2 = int(h[:2], 16), int(h[2:], 16)
-        return c2 * 2 ** (8 * (c1 - 3))
+        return util.compact_to_target(hex(self.bits)[2:])
 
     def validate_claimed_proof_of_work(self):
         """Validate proof of work based on the difficulty claimed by the block creator"""
