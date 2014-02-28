@@ -22,3 +22,6 @@ INVENTORY_TYPE = {
     "MSG_TX": 1,
     "MSG_BLOCK": 2,
 }
+
+# Highest block hash target, difficulty 1. See https://en.bitcoin.it/wiki/Difficulty
+HIGHEST_TARGET_BITS = 0x1d00ffff
