@@ -147,7 +147,7 @@ class Block(DataModel):
 
     def calculate_claimed_target(self):
         """Calculates the target based on the claimed difficulty bits, which should normally not be trusted"""
-        return util.compact_to_target(hex(self.bits)[2:])
+        return util.bits_to_target(self.bits)
 
     def validate_claimed_proof_of_work(self):
         """Validate proof of work based on the difficulty claimed by the block creator"""

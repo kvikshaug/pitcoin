@@ -29,13 +29,16 @@ def base58_decode(address):
         address_bignum += digit
     return address_bignum
 
-def compact_to_target(compact):
-    """Takes an 8-char hexadecimal compact and returns the decimal representation of the target hash"""
-    c1, c2 = int(compact[:2], 16), int(compact[2:], 16)
+def bits_to_target(compact):
+    """Takes a packed difficulty representation ("bits") and returns the decimal representation of the target hash.
+    See https://en.bitcoin.it/wiki/Difficulty"""
+    hex_value = hex(compact)[2:]
+    c1, c2 = int(hex_value[:2], 16), int(hex_value[2:], 16)
     return c2 * 2 ** (8 * (c1 - 3))
 
-def target_to_compact(target):
-    """Takes a target decimal and returns the 8-char hexadecimal compact representation"""
+def target_to_bits(target):
+    """Takes a target hash decimal and returns the packed compact representation ("bits").
+    See https://en.bitcoin.it/wiki/Difficulty"""
     def hex_lead(val):
         h = '%x' % val
         if len(h) % 2 == 1:
@@ -51,4 +54,4 @@ def target_to_compact(target):
     compact = "%s%s" % (length, base256[:6])
 
     missing = 8 - len(compact)
-    return '%s%s' % (compact, ('0' * missing))
+    return int('%s%s' % (compact, ('0' * missing)), 16)
