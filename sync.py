@@ -105,11 +105,20 @@ class Synchronizer(object):
     testnet = True
 
     @staticmethod
-    def synchronize():
-        # Read block data from disk
+    def read_blocks():
+        """Read block data from disk"""
         with open(Synchronizer.blocks_file) as f:
             Synchronizer.blocks = json.loads(f.read())
 
+    @staticmethod
+    def write_blocks():
+        """Write the current in-memory blocks to disk"""
+        with open(Synchronizer.blocks_file, 'w') as f:
+            f.write(json.dumps(Synchronizer.blocks))
+
+    @staticmethod
+    def synchronize():
+        Synchronizer.read_blocks()
         node = AddressBook.get_node()
         client = SyncClient(node.ip_address, node.port)
         client.handshake()
