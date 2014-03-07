@@ -29,7 +29,7 @@ class SyncClient(BitcoinClient):
         # If testnet, don't use 20-minute-rule targets; iterate backwards to last proper target
         if Synchronizer.testnet:
             height = current_height
-            while target == Synchronizer.max_target and height > 0 and height % Synchronizer.retarget_interval:
+            while target == Synchronizer.max_target and height > 0 and height % Synchronizer.retarget_interval != 0:
                 height -= 1
                 target = util.bits_to_target(Synchronizer.blocks[height]['bits'])
 
