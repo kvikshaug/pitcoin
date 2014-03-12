@@ -32,7 +32,7 @@ def base58_decode(address):
 def bits_to_target(compact):
     """Takes a packed difficulty representation ("bits") and returns the decimal representation of the target hash.
     See https://en.bitcoin.it/wiki/Difficulty"""
-    hex_value = hex(compact)[2:]
+    hex_value = "{:x}".format(compact)
     c1, c2 = int(hex_value[:2], 16), int(hex_value[2:], 16)
     return c2 * 2 ** (8 * (c1 - 3))
 
@@ -40,7 +40,7 @@ def target_to_bits(target):
     """Takes a target hash decimal and returns the packed compact representation ("bits").
     See https://en.bitcoin.it/wiki/Difficulty"""
     def hex_lead(val):
-        h = '%x' % val
+        h = "{:x}".format(val)
         if len(h) % 2 == 1:
             h = '0%s' % h
         return h
