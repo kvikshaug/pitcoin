@@ -32,7 +32,10 @@ class Block(models.Model):
             version=self.version,
             prev_block=int(self.prev_hash, 16),
             merkle_root=int(self.merkle_root, 16),
-            timestamp=calendar.timegm(self.timestamp.utctimetuple()),
+            timestamp=self.timestamp_unixtime(),
             bits=self.bits,
             nonce=self.nonce,
         ).calculate_hash()
+
+    def timestamp_unixtime(self):
+        return calendar.timegm(self.timestamp.utctimetuple())
