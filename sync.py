@@ -1,10 +1,13 @@
-import json
+from datetime import datetime
+
+from django.db.models import Max
 
 from protocoin.clients import BitcoinClient
 from protocoin.datatypes import messages, fields, values
 from protocoin import util
 
 from address import AddressBook
+from db.models import Block
 
 class SyncClient(BitcoinClient):
     def __init__(self, *args, **kwargs):
@@ -16,34 +19,36 @@ class SyncClient(BitcoinClient):
 
     def handle_inv(self, header, message):
         """Request data for any inv - the block handling will sort out random invs"""
-        self.last_expected_block = message.inventory[-1].inv_hash
+        self.last_expected_block_hash = "{:064x}".format(message.inventory[-1].inv_hash)
         self.send_message(messages.GetData(inventory=message.inventory))
 
-    def handle_block(self, header, block):
+    def handle_block(self, header, block_message):
         """Verify and save new blocks"""
         # Calculate the current target
-        current_height = len(Synchronizer.blocks)
-        prev_block = Synchronizer.blocks[-1]
-        target = util.bits_to_target(prev_block['bits'])
+        prev_block = Synchronizer.highest_block
+        current_height = prev_block.height + 1
+        target = util.bits_to_target(prev_block.bits)
 
         # If testnet, don't use 20-minute-rule targets; iterate backwards to last proper target
         if Synchronizer.testnet:
-            height = current_height
-            while target == Synchronizer.max_target and height > 0 and height % Synchronizer.retarget_interval != 0:
+            height = current_height - 1
+            while height > 0 and height % Synchronizer.retarget_interval != 0:
                 height -= 1
-                target = util.bits_to_target(Synchronizer.blocks[height]['bits'])
+            target = util.bits_to_target(Block.objects.get(height=height).bits)
 
-        if block.prev_block != prev_block['hash']:
+        if block_message.prev_hash() != prev_block.calculate_hash():
             # TODO: Proper logging
             print("Rejecting block %s: The previous block hash (%s) differs from our latest block hash (%s)" %
-                (block, block.prev_block, prev_block['hash']))
+                (block_message, block_message.prev_hash(), prev_block.calculate_hash()))
             return
 
         # Every 2016 blocks, recalculate the target based on the wanted timespan.
         # For all other blocks, the target remains equal to the previous target.
         if current_height % Synchronizer.retarget_interval == 0:
-            last_retargeted_block = Synchronizer.blocks[-Synchronizer.retarget_interval]
-            timespan = prev_block['timestamp'] - last_retargeted_block['timestamp']
+            retarget_height = 0 if current_height < Synchronizer.retarget_interval else current_height - Synchronizer.retarget_interval
+            last_retargeted_block = Block.objects.get(height=retarget_height)
+
+            timespan = prev_block.timestamp_unixtime() - last_retargeted_block.timestamp_unixtime()
 
             # Limit adjustment step
             if timespan > Synchronizer.target_timespan * 4:
@@ -64,26 +69,20 @@ class SyncClient(BitcoinClient):
 
         # 20 minute rule for testnet
         if Synchronizer.testnet:
-            if current_height % Synchronizer.retarget_interval != 0 and block.timestamp - prev_block['timestamp'] > 1200:
+            if current_height % Synchronizer.retarget_interval != 0 and block_message.timestamp - prev_block.timestamp_unixtime() > 1200:
                 target = Synchronizer.max_target
 
-        if not block.validate_proof_of_work(target):
+        if not block_message.validate_proof_of_work(target):
             # TODO proper logging
             print("Block %s invalid: (%s)" % (current_height, target))
             return
 
-        Synchronizer.blocks.append({
-            'nonce': block.nonce,
-            'hash': block.calculate_hash(),
-            'timestamp': block.timestamp,
-            'merkle_root': block.merkle_root,
-            'version': block.version,
-            'bits': block.bits
-        })
+        Synchronizer.add_block(block_message)
 
-        if block.calculate_hash() == self.last_expected_block:
+        if block_message.calculate_hash() == self.last_expected_block_hash:
             # Last hash of the expected invs - fetch more
             self.get_more_blocks()
+            # Logic when we're done?
 
     def handle_notfound(self, header, message):
         print(message)
@@ -94,9 +93,6 @@ class SyncClient(BitcoinClient):
         ))
 
 class Synchronizer(object):
-
-    blocks_file = 'blocks.json'
-
     max_target = util.bits_to_target(values.HIGHEST_TARGET_BITS)
     target_timespan = 60 * 60 * 24 * 7 * 2 # We want 2016 blocks to take 2 weeks.
     retarget_interval = 2016 # Blocks
@@ -104,41 +100,43 @@ class Synchronizer(object):
     # Use references to this field to track down any testnet specific clauses
     testnet = True
 
-    @staticmethod
-    def read_blocks():
-        """Read block data from disk"""
-        with open(Synchronizer.blocks_file) as f:
-            Synchronizer.blocks = json.loads(f.read())
-
-    @staticmethod
-    def write_blocks():
-        """Write the current in-memory blocks to disk"""
-        with open(Synchronizer.blocks_file, 'w') as f:
-            f.write(json.dumps(Synchronizer.blocks))
+    highest_block = Block.objects.order_by('height').last()
 
     @staticmethod
     def synchronize():
-        Synchronizer.read_blocks()
         node = AddressBook.get_node()
         client = SyncClient(node.ip_address, node.port)
         client.handshake()
         client.loop()
 
     @staticmethod
+    def add_block(block_message):
+        block = Block(
+            version=block_message.version,
+            prev_hash=block_message.prev_hash(),
+            merkle_root="{:064x}".format(block_message.merkle_root),
+            timestamp=datetime.utcfromtimestamp(block_message.timestamp),
+            bits=block_message.bits,
+            nonce=block_message.nonce,
+            prev_block=Synchronizer.highest_block,
+            height=Synchronizer.highest_block.height + 1,
+        )
+        block.save()
+        Synchronizer.highest_block = block
+
+    @staticmethod
     def get_locator_blocks():
         """When catching up, in case the chain has diverged, use these hashes to detect the newest
         valid block in our local chain. See https://en.bitcoin.it/wiki/Protocol_specification#getblocks"""
-        i = len(Synchronizer.blocks) - 1
-        ten_blocks_less = len(Synchronizer.blocks) - 10
+        top = Synchronizer.highest_block.height
+        i = top
         step = 1
         hashes = []
-        while True:
+        while i >= 0:
             field = fields.Hash()
-            field.set_value(Synchronizer.blocks[i]['hash'])
+            field.set_value(int(Block.objects.get(height=i).calculate_hash(), 16))
             hashes.append(field)
-            if i <= ten_blocks_less:
+            if i <= top - 10:
                 step *= 2
             i -= step
-            if i < 0:
-                break
         return hashes
