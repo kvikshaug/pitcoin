@@ -13,8 +13,8 @@ class Block(models.Model):
     prev_hash = models.CharField(max_length=64)
     merkle_root = models.CharField(max_length=64)
     timestamp = models.DateTimeField()
-    bits = models.IntegerField()
-    nonce = models.IntegerField()
+    bits = models.BigIntegerField()
+    nonce = models.BigIntegerField()
 
     #
     # Extra data
