@@ -1,7 +1,5 @@
 from datetime import datetime
 
-from django.db.models import Max
-
 from protocoin.clients import BitcoinClient
 from protocoin.datatypes import messages, fields, values
 from protocoin import util
