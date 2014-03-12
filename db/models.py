@@ -1,4 +1,8 @@
+import calendar
+
 from django.db import models
+
+from protocoin.datatypes.messages import Block as PBlock
 
 class Block(models.Model):
     #
@@ -21,3 +25,14 @@ class Block(models.Model):
 
     # A direct reference to the previous block
     prev_block = models.ForeignKey('db.Block', null=True) # ONLY the genesis block can have NULL!
+
+    def calculate_hash(self):
+        """Use protocoins hash calculation"""
+        return PBlock(
+            version=self.version,
+            prev_block=int(self.prev_hash, 16),
+            merkle_root=int(self.merkle_root, 16),
+            timestamp=calendar.timegm(self.timestamp.utctimetuple()),
+            bits=self.bits,
+            nonce=self.nonce,
+        ).calculate_hash()
