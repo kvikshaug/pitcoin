@@ -127,7 +127,7 @@ class Synchronizer(object):
     @staticmethod
     def get_locator_blocks():
         """When catching up, in case the chain has diverged, use these hashes to detect the newest
-        valid block in our local chain"""
+        valid block in our local chain. See https://en.bitcoin.it/wiki/Protocol_specification#getblocks"""
         i = len(Synchronizer.blocks) - 1
         ten_blocks_less = len(Synchronizer.blocks) - 10
         step = 1
