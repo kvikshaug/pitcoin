@@ -1,4 +1,5 @@
 import time
+import os
 
 from protocoin.clients import BitcoinClient
 from protocoin.datatypes import messages
@@ -6,6 +7,7 @@ from protocoin.datatypes import messages
 from address import AddressBook
 from sync import Synchronizer
 
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "db.settings")
 
 # class BTCClient(BitcoinClient):
 #     def __init__(self, *args, **kwargs):
