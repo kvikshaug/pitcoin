@@ -136,6 +136,9 @@ class Block(DataModel):
     def __iter__(self):
         return __iter__(self.txns)
 
+    def prev_hash(self):
+        return "{:064x}".format(self.prev_block)
+
     def calculate_hash(self):
         hash_fields = ["version", "prev_block", "merkle_root", "timestamp", "bits", "nonce"]
         stream = BytesIO()
