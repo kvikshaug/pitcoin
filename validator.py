@@ -10,8 +10,7 @@ retarget_interval = 2016 # Blocks
 def validate_block(block_message, prev_block):
     """Validate a new block"""
     # Calculate the current target
-    current_height = prev_block.height + 1
-    target = get_target(current_height, prev_block, block_message)
+    target = get_target(block_message, prev_block)
 
     if block_message.prev_hash() != prev_block.calculate_hash():
         # TODO: Proper logging
@@ -21,14 +20,15 @@ def validate_block(block_message, prev_block):
 
     if not block_message.validate_proof_of_work(target):
         # TODO proper logging
-        print("Block %s invalid: (%s)" % (current_height, target))
+        print("Block #%s invalid: (%s)" % (prev_block.height + 1, target))
         return False
 
     return True
 
-def get_target(current_height, prev_block, block_message):
+def get_target(block_message, prev_block):
     from client import testnet
 
+    current_height = prev_block.height + 1
     target = util.bits_to_target(prev_block.bits)
 
     # If testnet, don't use 20-minute-rule targets; iterate backwards to last proper target
@@ -39,7 +39,7 @@ def get_target(current_height, prev_block, block_message):
         target = util.bits_to_target(Block.objects.get(height=height).bits)
 
     if current_height % retarget_interval == 0:
-        target = retarget(target, current_height, prev_block)
+        target = retarget(target, prev_block)
 
     # 20 minute rule for testnet
     if testnet:
@@ -48,11 +48,12 @@ def get_target(current_height, prev_block, block_message):
 
     return target
 
-def retarget(target, current_height, prev_block):
+def retarget(target, prev_block):
     """
     Every *retarget_interval* blocks, recalculate the target based on the wanted timespan.
     For all other blocks, the target remains equal to the previous target.
     """
+    current_height = prev_block.height + 1
     retarget_height = 0 if current_height < retarget_interval else current_height - retarget_interval
     last_retargeted_block = Block.objects.get(height=retarget_height)
 
