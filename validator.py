@@ -7,12 +7,12 @@ max_target = util.bits_to_target(values.HIGHEST_TARGET_BITS)
 target_timespan = 60 * 60 * 24 * 7 * 2 # We want 2016 blocks to take 2 weeks.
 retarget_interval = 2016 # Blocks
 
-def validate_block(block_message, testnet):
+def validate_block(block_message):
     """Validate a new block"""
     # Calculate the current target
     prev_block = Block.objects.order_by('height').last()
     current_height = prev_block.height + 1
-    target = get_target(current_height, prev_block, block_message, testnet)
+    target = get_target(current_height, prev_block, block_message)
 
     if block_message.prev_hash() != prev_block.calculate_hash():
         # TODO: Proper logging
@@ -27,7 +27,9 @@ def validate_block(block_message, testnet):
 
     return True
 
-def get_target(current_height, prev_block, block_message, testnet):
+def get_target(current_height, prev_block, block_message):
+    from client import testnet
+
     target = util.bits_to_target(prev_block.bits)
 
     # If testnet, don't use 20-minute-rule targets; iterate backwards to last proper target

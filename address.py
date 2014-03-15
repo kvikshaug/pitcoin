@@ -12,7 +12,11 @@ from models import Node
 
 class AddressClient(BitcoinClient):
     def __init__(self, *args, **kwargs):
-        super(AddressClient, self).__init__(coin='bitcoin_testnet3', *args, **kwargs)
+        from client import testnet
+        if not testnet:
+            super(AddressClient, self).__init__(*args, **kwargs)
+        else:
+            super(AddressClient, self).__init__(coin='bitcoin_testnet3', *args, **kwargs)
 
     def on_handshake(self):
         self.send_message(messages.GetAddr())

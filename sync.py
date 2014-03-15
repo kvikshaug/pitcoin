@@ -9,7 +9,11 @@ import validator
 
 class SyncClient(BitcoinClient):
     def __init__(self, *args, **kwargs):
-        super(SyncClient, self).__init__(coin='bitcoin_testnet3', *args, **kwargs)
+        from client import testnet
+        if not testnet:
+            super(SyncClient, self).__init__(*args, **kwargs)
+        else:
+            super(SyncClient, self).__init__(coin='bitcoin_testnet3', *args, **kwargs)
 
     def on_handshake(self):
         """Send the initial GetBlocks after handshaking"""
@@ -22,7 +26,7 @@ class SyncClient(BitcoinClient):
 
     def handle_block(self, header, block_message):
         """Validate and save new blocks"""
-        if not validator.validate_block(block_message, Synchronizer.testnet):
+        if not validator.validate_block(block_message):
             return
 
         Synchronizer.add_block(block_message)
@@ -41,9 +45,6 @@ class SyncClient(BitcoinClient):
         ))
 
 class Synchronizer(object):
-    # Use references to this field to track down any testnet specific clauses
-    testnet = True
-
     @staticmethod
     def synchronize():
         node = AddressBook.get_node()
