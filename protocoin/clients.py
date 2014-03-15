@@ -3,10 +3,10 @@ import sys
 import os
 import socket
 
-from datatypes import messages, structures
-from exceptions import NodeDisconnected, UnknownCommand, InvalidChecksum
+from .datatypes import messages, structures
+from .exceptions import NodeDisconnected, UnknownCommand, InvalidChecksum
 
-from config import logger
+from .config import logger
 
 class BitcoinBasicClient(object):
     """The base class for a Bitcoin network client, this class
@@ -157,12 +157,12 @@ class BitcoinBasicClient(object):
                         break
 
                     header, message, more_data = data
-                    if hasattr(self, "handle_%s" % header.command):
-                        getattr(self, "handle_%s" % header.command)(header, message)
+                    if hasattr(self, "handle_%s" % header.command.decode('ascii')):
+                        getattr(self, "handle_%s" % header.command.decode('ascii'))(header, message)
                     if not more_data:
                         break
             except (InvalidChecksum, UnknownCommand) as e:
-                logger.warning(u"Error parsing data packet: %s" % e.message,
+                logger.warning("Error parsing data packet: %s" % e.message,
                     exc_info=sys.exc_info(),
                 )
 

@@ -1,6 +1,6 @@
 import copy
 
-import fields
+from . import fields
 
 class DataModel(object):
 
@@ -11,7 +11,7 @@ class DataModel(object):
 
         # Copy datamodel class fields to an internal field dict on the instance
         object.__setattr__(self, '_fields', {})
-        for field_name, field in self.__class__.__dict__.items():
+        for field_name, field in list(self.__class__.__dict__.items()):
             if isinstance(field, fields.Field) or isinstance(field, DataModel):
                 self._fields[field_name] = copy.deepcopy(field)
 
@@ -27,7 +27,7 @@ class DataModel(object):
         if stream is not None:
             self.deserialize(stream)
         else:
-            for field, value in kwargs.items():
+            for field, value in list(kwargs.items()):
                 setattr(self, field, value)
 
     def __getattribute__(self, name):
@@ -46,12 +46,12 @@ class DataModel(object):
 
     def deserialize(self, stream):
         """Deserialize this model from the given stream"""
-        for field in [field for field in sorted(self._fields.values(), key=lambda f: f.order)]:
+        for field in [field for field in sorted(list(self._fields.values()), key=lambda f: f.order)]:
             field.deserialize(stream)
 
     def serialize(self, stream):
         """Serialize the current data in this model to the given stream"""
-        for field in [field for field in sorted(self._fields.values(), key=lambda f: f.order)]:
+        for field in [field for field in sorted(list(self._fields.values()), key=lambda f: f.order)]:
             field.serialize(stream)
 
     def get_value(self):

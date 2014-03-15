@@ -6,26 +6,26 @@ from io import BytesIO
 import binascii
 import hashlib
 
-from meta import DataModel
-import structures, values, fields
+from .meta import DataModel
+from . import structures, values, fields
 from ..exceptions import UnknownCommand
 from .. import util
 
 class Version(DataModel):
-    command = "version"
+    command = b"version"
     version = fields.Int32LEField(default=values.PROTOCOL_VERSION)
     services = fields.UInt64LEField(default=values.SERVICES["NODE_NETWORK"])
     timestamp = fields.Int64LEField(default=lambda: int(time.time()))
     addr_recv = structures.IPv4Address()
     addr_from = structures.IPv4Address()
     nonce = fields.UInt64LEField(default=lambda: random.randint(0, 2**32-1))
-    user_agent = fields.VariableStringField(default="/Perone:0.0.1/")
+    user_agent = fields.VariableStringField(default=b"/Perone:0.0.1/")
 
     def _services_to_text(self):
         """Converts the services field into a textual
         representation."""
         services = []
-        for service_name, flag_mask in values.SERVICES.iteritems():
+        for service_name, flag_mask in values.SERVICES.items():
             if self.services & flag_mask:
                 services.append(service_name)
         return services
@@ -40,24 +40,24 @@ class Version(DataModel):
 
 class VerAck(DataModel):
     """The version acknowledge (verack) command."""
-    command = "verack"
+    command = b"verack"
 
 class Ping(DataModel):
-    command = "ping"
+    command = b"ping"
     nonce = fields.UInt64LEField(default=lambda: random.randint(0, 2**32-1))
 
     def __repr__(self):
         return "<%s Nonce=[%d]>" % (self.__class__.__name__, self.nonce)
 
 class Pong(DataModel):
-    command = "pong"
+    command = b"pong"
     nonce = fields.UInt64LEField(default=lambda: random.randint(0, 2**32-1))
 
     def __repr__(self):
         return "<%s Nonce=[%d]>" % (self.__class__.__name__, self.nonce)
 
 class InventoryVector(DataModel):
-    command = "inv"
+    command = b"inv"
     inventory = fields.ListField(structures.Inventory)
 
     def __repr__(self):
@@ -70,7 +70,7 @@ class InventoryVector(DataModel):
         return iter(self.inventory)
 
 class AddressVector(DataModel):
-    command = "addr"
+    command = b"addr"
     addresses = fields.ListField(structures.IPv4AddressTimestamp)
 
     def __repr__(self):
@@ -83,12 +83,12 @@ class AddressVector(DataModel):
         return iter(self.addresses)
 
 class GetData(DataModel):
-    command = "getdata"
+    command = b"getdata"
     inventory = fields.ListField(structures.Inventory)
 
 class NotFound(GetData):
     """NotFound command message."""
-    command = "notfound"
+    command = b"notfound"
     inventory = fields.ListField(structures.Inventory)
 
     def __repr__(self):
@@ -97,7 +97,7 @@ class NotFound(GetData):
 class Tx(DataModel):
     """The main transaction representation, this object will
     contain all the inputs and outputs of the transaction."""
-    command = "tx"
+    command = b"tx"
     version = fields.UInt32LEField(default=0)
     tx_in = fields.ListField(structures.TxIn)
     tx_out = fields.ListField(structures.TxOut)
@@ -121,7 +121,7 @@ class Tx(DataModel):
 
 class Block(DataModel):
     """The block message. This message contains all the transactions present in the block."""
-    command = "block"
+    command = b"block"
     version = fields.UInt32LEField(default=0)
     prev_block = fields.Hash(default=0)
     merkle_root = fields.Hash(default=0)
@@ -146,7 +146,7 @@ class Block(DataModel):
             self._fields[field_name].serialize(stream)
         h = hashlib.sha256(stream.getvalue()).digest()
         h = hashlib.sha256(h).digest()
-        return binascii.hexlify(h[::-1])
+        return binascii.hexlify(h[::-1]).decode('ascii')
 
     def calculate_claimed_target(self):
         """Calculates the target based on the claimed difficulty bits, which should normally not be trusted"""
@@ -167,7 +167,7 @@ class Block(DataModel):
 
 class HeaderVector(DataModel):
     """The header only vector."""
-    command = "headers"
+    command = b"headers"
     headers = fields.ListField(Block)
 
     def __repr__(self):
@@ -181,14 +181,14 @@ class HeaderVector(DataModel):
 
 class MemPool(DataModel):
     """The mempool command."""
-    command = "mempool"
+    command = b"mempool"
 
 class GetAddr(DataModel):
     """The getaddr command."""
-    command = "getaddr"
+    command = b"getaddr"
 
 class GetBlocks(DataModel):
-    command = "getblocks"
+    command = b"getblocks"
     version = fields.UInt32LEField(default=values.PROTOCOL_VERSION)
     block_locator_hashes = fields.ListField(fields.Hash)
     hash_stop = fields.Hash(default=0)

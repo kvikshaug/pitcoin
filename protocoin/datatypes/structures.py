@@ -2,8 +2,8 @@ import hashlib
 import time
 import struct
 
-from meta import DataModel
-import fields, values
+from .meta import DataModel
+from . import fields, values
 
 class MessageHeader(DataModel):
     """The header of all bitcoin messages."""
@@ -17,7 +17,7 @@ class MessageHeader(DataModel):
 
     def _magic_to_text(self):
         """Converts the magic value to a textual representation."""
-        for k, v in values.MAGIC_VALUES.iteritems():
+        for k, v in values.MAGIC_VALUES.items():
             if v == self.magic:
                 return k
         return "Unknown Magic"
@@ -51,7 +51,7 @@ class IPv4Address(DataModel):
         """Converts the services field into a textual
         representation."""
         services = []
-        for service_name, flag_mask in values.SERVICES.iteritems():
+        for service_name, flag_mask in values.SERVICES.items():
             if self.services & flag_mask:
                 services.append(service_name)
         return services
@@ -78,7 +78,7 @@ class Inventory(DataModel):
 
     def type_to_text(self):
         """Converts the inventory type to text representation."""
-        for k, v in values.INVENTORY_TYPE.iteritems():
+        for k, v in values.INVENTORY_TYPE.items():
             if v == self.inv_type:
                 return k
         return "Unknown Type"
