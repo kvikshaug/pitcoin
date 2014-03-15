@@ -30,21 +30,22 @@ class AddressClient(BitcoinClient):
             ))
 
 class AddressBook(threading.Thread):
+    from client import testnet
+
     addresses = []
-    seed_addresses = [
-        # "vg.no",
-        "as",
-
-        # "seed.bitcoin.sipa.be",
-        # "dnsseed.bluematt.me",
-        # "dnsseed.bitcoin.dashjr.org",
-        # "seed.bitcoinstats.com",
-        # "bitseed.xf2.org",
-
-        # Testnet
-        # "testnet-seed.bitcoin.petertodd.org",
-        # "testnet-seed.bluematt.me",
-    ]
+    if not testnet:
+        seed_addresses = [
+            "seed.bitcoin.sipa.be",
+            "dnsseed.bluematt.me",
+            "dnsseed.bitcoin.dashjr.org",
+            "seed.bitcoinstats.com",
+            "bitseed.xf2.org",
+        ]
+    else:
+        seed_addresses = [
+            "testnet-seed.bitcoin.petertodd.org",
+            "testnet-seed.bluematt.me",
+        ]
 
     @staticmethod
     def bootstrap():
@@ -76,9 +77,7 @@ class AddressBook(threading.Thread):
     def get_node():
         viable_address = max(AddressBook.addresses, key=lambda a: a.time)
         AddressBook.addresses.remove(viable_address)
-        # Test against as for now
-        # return viable_address
-        return Node(ip_address="as", port=18333, time=None)
+        return viable_address
 
     def run(self):
         pass

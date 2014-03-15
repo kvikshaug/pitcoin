@@ -64,8 +64,9 @@ class SyncClient(BitcoinClient):
 class Synchronizer(object):
     @staticmethod
     def synchronize():
-        node = AddressBook.get_node()
-        client = SyncClient(node.ip_address, node.port)
+        # Test against as for now
+        # node = AddressBook.get_node()
+        client = SyncClient("as")
         client.handshake()
         client.loop()
 
