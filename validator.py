@@ -26,7 +26,7 @@ def validate_block(block_message, prev_block):
     return True
 
 def get_target(block_message, prev_block):
-    from client import testnet
+    from testnet import testnet
 
     current_height = prev_block.height + 1
     target = util.bits_to_target(prev_block.bits)

@@ -12,7 +12,7 @@ from models import Node
 
 class AddressClient(BitcoinClient):
     def __init__(self, *args, **kwargs):
-        from client import testnet
+        from testnet import testnet
         if not testnet:
             super(AddressClient, self).__init__(*args, **kwargs)
         else:
@@ -30,7 +30,7 @@ class AddressClient(BitcoinClient):
             ))
 
 class AddressBook(threading.Thread):
-    from client import testnet
+    from testnet import testnet
 
     addresses = []
     if not testnet:

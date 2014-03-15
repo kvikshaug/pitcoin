@@ -9,7 +9,7 @@ import validator
 
 class SyncClient(BitcoinClient):
     def __init__(self, *args, **kwargs):
-        from client import testnet
+        from testnet import testnet
         if not testnet:
             super(SyncClient, self).__init__(*args, **kwargs)
         else:
