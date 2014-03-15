@@ -22,12 +22,17 @@ class TestClient(BitcoinClient):
     def handle_block(self, header, block_message):
         print("Got block: %s" % block_message)
         for tx in block_message.txns:
-            print(tx)
+            for tx_in in tx.tx_in:
+                script = Script(tx_in.signature_script)
 
 class Script(object):
-    def __init__(self):
+    def __init__(self, signature_script):
+        self.signature_script = signature_script
         self.datastack = []
         self.ifstack = []
+
+    def parse(signature_script):
+        pass
 
     def run():
         pass
