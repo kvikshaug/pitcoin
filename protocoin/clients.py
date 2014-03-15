@@ -162,7 +162,7 @@ class BitcoinBasicClient(object):
                     if not more_data:
                         break
             except (InvalidChecksum, UnknownCommand) as e:
-                logger.warning(u"Error parsing data packet: %s" % e.message,
+                logger.warning("Error parsing data packet: %s" % e.message,
                     exc_info=sys.exc_info(),
                 )
 

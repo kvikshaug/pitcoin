@@ -1,5 +1,6 @@
 import struct
 import socket
+import collections
 
 class Field(object):
     order = 0
@@ -14,7 +15,7 @@ class Field(object):
         self.set_value(self.get_default())
 
     def get_default(self):
-        if callable(self.default):
+        if isinstance(self.default, collections.Callable):
             return self.default()
         else:
             return self.default
@@ -124,7 +125,7 @@ class ListField(Field):
     def deserialize(self, stream):
         self.length.deserialize(stream)
         items = []
-        for i in xrange(self.length.get_value()):
+        for i in range(self.length.get_value()):
             subfield = self.field_class()
             subfield.deserialize(stream)
             items.append(subfield)

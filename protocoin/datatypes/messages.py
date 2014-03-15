@@ -25,7 +25,7 @@ class Version(DataModel):
         """Converts the services field into a textual
         representation."""
         services = []
-        for service_name, flag_mask in values.SERVICES.iteritems():
+        for service_name, flag_mask in values.SERVICES.items():
             if self.services & flag_mask:
                 services.append(service_name)
         return services
