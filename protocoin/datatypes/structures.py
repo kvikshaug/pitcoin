@@ -2,8 +2,8 @@ import hashlib
 import time
 import struct
 
-from meta import DataModel
-import fields, values
+from .meta import DataModel
+from . import fields, values
 
 class MessageHeader(DataModel):
     """The header of all bitcoin messages."""

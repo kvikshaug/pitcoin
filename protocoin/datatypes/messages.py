@@ -6,8 +6,8 @@ from io import BytesIO
 import binascii
 import hashlib
 
-from meta import DataModel
-import structures, values, fields
+from .meta import DataModel
+from . import structures, values, fields
 from ..exceptions import UnknownCommand
 from .. import util
 

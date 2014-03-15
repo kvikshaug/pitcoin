@@ -1,6 +1,6 @@
 import copy
 
-import fields
+from . import fields
 
 class DataModel(object):
 

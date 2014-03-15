@@ -3,10 +3,10 @@ import sys
 import os
 import socket
 
-from datatypes import messages, structures
-from exceptions import NodeDisconnected, UnknownCommand, InvalidChecksum
+from .datatypes import messages, structures
+from .exceptions import NodeDisconnected, UnknownCommand, InvalidChecksum
 
-from config import logger
+from .config import logger
 
 class BitcoinBasicClient(object):
     """The base class for a Bitcoin network client, this class
