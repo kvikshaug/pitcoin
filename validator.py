@@ -7,10 +7,9 @@ max_target = util.bits_to_target(values.HIGHEST_TARGET_BITS)
 target_timespan = 60 * 60 * 24 * 7 * 2 # We want 2016 blocks to take 2 weeks.
 retarget_interval = 2016 # Blocks
 
-def validate_block(block_message):
+def validate_block(block_message, prev_block):
     """Validate a new block"""
     # Calculate the current target
-    prev_block = Block.objects.order_by('height').last()
     current_height = prev_block.height + 1
     target = get_target(current_height, prev_block, block_message)
 
