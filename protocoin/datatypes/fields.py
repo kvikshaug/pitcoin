@@ -88,7 +88,7 @@ class UInt16BEField(PrimaryField):
     datatype = ">H"
 
 class FixedStringField(Field):
-    """A fixed length string field."""
+    """A fixed length bytestring field."""
     def __init__(self, length, *args, **kwargs):
         self.length = length
         super(FixedStringField, self).__init__(*args, **kwargs)
@@ -101,12 +101,12 @@ class FixedStringField(Field):
 
     def deserialize(self, stream):
         data = stream.read(self.length)
-        value = data.split("\x00", 1)[0]
+        value = data.split(b"\x00", 1)[0]
         self.value = value[:self.length]
 
     def serialize(self, stream):
         stream.write(self.value[:self.length])
-        stream.write("\x00" * (12 - len(self.value)))
+        stream.write(b"\x00" * (12 - len(self.value)))
 
 class ListField(Field):
     """A field used to serialize/deserialize a list of fields. """
@@ -183,17 +183,17 @@ class VariableIntegerField(Field):
 
     def serialize(self, stream):
         if self.value < 0xFD:
-            data = chr(self.value)
+            data = struct.pack("<B", self.value)
         elif self.value <= 0xFFFF:
-            data = chr(0xFD) + struct.pack("<H", self.value)
+            data = struct.pack("<B", 0xFD) + struct.pack("<H", self.value)
         elif self.value <= 0xFFFFFFFF:
-            data = chr(0xFE) + struct.pack("<I", self.value)
+            data = struct.pack("<B", 0xFE) + struct.pack("<I", self.value)
         else:
-            data = chr(0xFF) + struct.pack("<Q", self.value)
+            data = struct.pack("<B", 0xFF) + struct.pack("<Q", self.value)
         stream.write(data)
 
 class VariableStringField(Field):
-    """A variable length string field."""
+    """A variable length bytestring field."""
     length = VariableIntegerField()
 
     def set_value(self, value):
@@ -206,7 +206,7 @@ class VariableStringField(Field):
     def deserialize(self, stream):
         self.length.deserialize(stream)
         string_value = stream.read(self.length.get_value())
-        self.value = str(string_value)
+        self.value = string_value
 
     def serialize(self, stream):
         self.length.serialize(stream)
