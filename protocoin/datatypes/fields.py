@@ -183,11 +183,12 @@ class VariableIntegerField(Field):
     def serialize(self, stream):
         if self.value < 0xFD:
             data = chr(self.value)
-        if self.value <= 0xFFFF:
+        elif self.value <= 0xFFFF:
             data = chr(0xFD) + struct.pack("<H", self.value)
-        if self.value <= 0xFFFFFFFF:
+        elif self.value <= 0xFFFFFFFF:
             data = chr(0xFE) + struct.pack("<I", self.value)
-        data = chr(0xFF) + struct.pack("<Q", self.value)
+        else:
+            data = chr(0xFF) + struct.pack("<Q", self.value)
         stream.write(data)
 
 class VariableStringField(Field):
