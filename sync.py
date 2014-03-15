@@ -29,7 +29,19 @@ class SyncClient(BitcoinClient):
         if not validator.validate_block(block_message):
             return
 
-        Synchronizer.add_block(block_message)
+        # Save the new block
+        prev_block = Block.objects.order_by('height').last()
+        block = Block(
+            version=block_message.version,
+            prev_hash=block_message.prev_hash(),
+            merkle_root="{:064x}".format(block_message.merkle_root),
+            timestamp=datetime.utcfromtimestamp(block_message.timestamp),
+            bits=block_message.bits,
+            nonce=block_message.nonce,
+            prev_block=prev_block,
+            height=prev_block.height + 1,
+        )
+        block.save()
 
         if block_message.calculate_hash() == self.last_expected_block_hash:
             # Last hash of the expected invs - fetch more
@@ -51,21 +63,6 @@ class Synchronizer(object):
         client = SyncClient(node.ip_address, node.port)
         client.handshake()
         client.loop()
-
-    @staticmethod
-    def add_block(block_message):
-        prev_block = Block.objects.order_by('height').last()
-        block = Block(
-            version=block_message.version,
-            prev_hash=block_message.prev_hash(),
-            merkle_root="{:064x}".format(block_message.merkle_root),
-            timestamp=datetime.utcfromtimestamp(block_message.timestamp),
-            bits=block_message.bits,
-            nonce=block_message.nonce,
-            prev_block=prev_block,
-            height=prev_block.height + 1,
-        )
-        block.save()
 
     @staticmethod
     def get_locator_blocks():
