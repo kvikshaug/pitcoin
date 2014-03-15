@@ -23,3 +23,11 @@ class TestClient(BitcoinClient):
         print("Got block: %s" % block_message)
         for tx in block_message.txns:
             print(tx)
+
+class Script(object):
+    def __init__(self):
+        self.datastack = []
+        self.ifstack = []
+
+    def run():
+        pass
