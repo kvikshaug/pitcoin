@@ -15,7 +15,7 @@ class Version(DataModel):
     command = "version"
     version = fields.Int32LEField(default=values.PROTOCOL_VERSION)
     services = fields.UInt64LEField(default=values.SERVICES["NODE_NETWORK"])
-    timestamp = fields.Int64LEField(default=lambda: time.time())
+    timestamp = fields.Int64LEField(default=lambda: int(time.time()))
     addr_recv = structures.IPv4Address()
     addr_from = structures.IPv4Address()
     nonce = fields.UInt64LEField(default=lambda: random.randint(0, 2**32-1))
