@@ -145,7 +145,7 @@ class ListField(Field):
 
 class IPv4AddressField(Field):
     """An IPv4 address field without timestamp and reserved IPv6 space."""
-    reserved = "\x00"*10 + "\xff"*2
+    reserved = b"\x00"*10 + b"\xff"*2
 
     def set_value(self, value):
         self.value = value
