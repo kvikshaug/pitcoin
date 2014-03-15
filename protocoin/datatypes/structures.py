@@ -99,7 +99,7 @@ class OutPoint(DataModel):
 class TxIn(DataModel):
     """The transaction input representation."""
     previous_output = OutPoint()
-    signature_script = fields.VariableStringField(default="Empty")
+    signature_script = fields.VariableStringField(default=b"Empty")
     sequence = fields.UInt32LEField(default=0)
 
     def __repr__(self):
@@ -108,7 +108,7 @@ class TxIn(DataModel):
 class TxOut(DataModel):
     """The transaction output."""
     value = fields.Int64LEField(default=0)
-    pk_script = fields.VariableStringField(default="Empty")
+    pk_script = fields.VariableStringField(default=b"Empty")
 
     def get_btc_value(self):
         return self.value//100000000 + self.value%100000000/100000000.0
