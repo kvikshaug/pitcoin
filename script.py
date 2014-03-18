@@ -81,6 +81,8 @@ class Script(object):
                 # Verify chunk length
                 if len(chunk['value']) > Script.MAX_SCRIPT_DATA_SIZE:
                     raise ScriptException("Script pushed %s bytes of data, max is %s" % (len(chunk['value']), Script.MAX_SCRIPT_DATA_SIZE))
+
+                stack.append(chunk['value'])
             else:
                 if chunk['value'] in [OP_CAT, OP_SUBSTR, OP_LEFT, OP_RIGHT, OP_INVERT, OP_AND, OP_OR, OP_XOR, OP_2MUL,
                     OP_2DIV, OP_MUL, OP_DIV, OP_MOD, OP_LSHIFT, OP_RSHIFT]:
