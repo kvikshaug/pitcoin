@@ -77,10 +77,17 @@ class Script(object):
 
     def execute(self):
         for chunk in self.chunks:
+
+            # Handles the current flow control (execute or not)
+            execute = not self.ifstack.contains(False)
+
             if chunk['type'] == 'data':
                 # Verify chunk length
                 if len(chunk['value']) > Script.MAX_SCRIPT_DATA_SIZE:
                     raise ScriptException("Script pushed %s bytes of data, max is %s" % (len(chunk['value']), Script.MAX_SCRIPT_DATA_SIZE))
+
+                if not execute:
+                    continue
 
                 stack.append(chunk['value'])
             else:
@@ -93,12 +100,20 @@ class Script(object):
                 #
 
                 if chunk['value'] == OP_IF:
+                    if not execute:
+                        # Append an irrelevant value to the flow control stack to keep track of nesting
+                        self.ifstack.append(False)
+                        continue
                     if len(self.stack) == 0:
                         raise ScriptException("Script attempted OP_IF on empty stack")
                     self.ifstack.append(cast_to_bool(self.stack.pop()))
                     continue
 
                 elif chunk['value'] == OP_NOTIF:
+                    if not execute:
+                        # Append an irrelevant value to the flow control stack to keep track of nesting
+                        self.ifstack.append(False)
+                        continue
                     if len(self.stack) == 0:
                         raise ScriptException("Script attempted OP_NOTIF on empty stack")
                     self.ifstack.append(not cast_to_bool(self.stack.pop()))
@@ -114,6 +129,10 @@ class Script(object):
                     if len(self.ifstack) == 0:
                         raise ScriptException("Script attempted OP_ENDIF on empty if-stack")
                     self.ifstack.pop()
+                    continue
+
+                if not execute:
+                    # Done with control operations and not executing. Skip ahead to next operation
                     continue
 
     def cast_to_bool(data):
