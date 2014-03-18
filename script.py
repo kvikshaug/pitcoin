@@ -31,6 +31,7 @@ class Script(object):
     """The stack-based bitcoin script language for transaction redemption. See https://en.bitcoin.it/wiki/Script"""
 
     MAX_SCRIPT_DATA_SIZE = 520
+    MAX_OPCODE_COUNT = 201
 
     def __init__(self, script):
         self.datastack = []
@@ -42,6 +43,7 @@ class Script(object):
         """Parse pushed data and non-pushdata opcodes into chunks"""
 
         i = 0
+        opcode_count = 0
         while i < len(script):
             opcode = script[i]
             i += 1
@@ -65,6 +67,12 @@ class Script(object):
                 self.chunks.append({'type': 'data', 'value': script[i:i+read_length]})
                 i += read_length
             else:
+                if opcode >= OP_NOP:
+                    # Note how OP_RESERVED does not count towards the opcode limit.
+                    # https://github.com/bitcoin/bitcoin/blob/0.9.0/src/script.cpp#L335
+                    opcode_count += 1
+                    if opcode_count > Script.MAX_OPCODE_COUNT:
+                        raise ScriptException("Script contains more than the allowed %s opcodes" % Script.MAX_OPCODE_COUNT)
                 self.chunks.append({'type': 'opcode', 'value': opcode})
 
     def execute(self):
