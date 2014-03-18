@@ -88,5 +88,15 @@ class Script(object):
                     OP_2DIV, OP_MUL, OP_DIV, OP_MOD, OP_LSHIFT, OP_RSHIFT]:
                     raise ScriptException("Script contains disabled operation '%s'" % chunk['value'])
 
+                if chunk['value'] == OP_IF:
+                    if len(self.stack) == 0:
+                        raise ScriptException("Attempted OP_IF on empty stack")
+                    self.ifstack.append(cast_to_bool(self.stack.pop()))
+
+    def cast_to_bool(data):
+        """Evaluate data to boolean. Exclude 0x80 from last byte because "Can be negative zero" -reference client.
+        https://github.com/bitcoin/bitcoin/blob/0.9.0/src/script.cpp#L44"""
+        return any([b != 0 for b in data[:-1]]) or (data[-1] != 0 and data[-1] != 0x80)
+
 class ScriptException(Exception):
     """Thrown if the provided script has a syntax error or is otherwise invalid according to the Bitcoin Script rules."""
