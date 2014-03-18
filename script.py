@@ -81,6 +81,10 @@ class Script(object):
                 # Verify chunk length
                 if len(chunk['value']) > Script.MAX_SCRIPT_DATA_SIZE:
                     raise ScriptException("Script pushed %s bytes of data, max is %s" % (len(chunk['value']), Script.MAX_SCRIPT_DATA_SIZE))
+            else:
+                if chunk['value'] in [OP_CAT, OP_SUBSTR, OP_LEFT, OP_RIGHT, OP_INVERT, OP_AND, OP_OR, OP_XOR, OP_2MUL,
+                    OP_2DIV, OP_MUL, OP_DIV, OP_MOD, OP_LSHIFT, OP_RSHIFT]:
+                    raise ScriptException("Script contains disabled operation '%s'" % chunk['value'])
 
 class ScriptException(Exception):
     """Thrown if the provided script has a syntax error or is otherwise invalid according to the Bitcoin Script rules."""
