@@ -88,10 +88,33 @@ class Script(object):
                     OP_2DIV, OP_MUL, OP_DIV, OP_MOD, OP_LSHIFT, OP_RSHIFT]:
                     raise ScriptException("Script contains disabled operation '%s'" % chunk['value'])
 
+                #
+                # FLOW CONTROL
+                #
+
                 if chunk['value'] == OP_IF:
                     if len(self.stack) == 0:
-                        raise ScriptException("Attempted OP_IF on empty stack")
+                        raise ScriptException("Script attempted OP_IF on empty stack")
                     self.ifstack.append(cast_to_bool(self.stack.pop()))
+                    continue
+
+                elif chunk['value'] == OP_NOTIF:
+                    if len(self.stack) == 0:
+                        raise ScriptException("Script attempted OP_NOTIF on empty stack")
+                    self.ifstack.append(not cast_to_bool(self.stack.pop()))
+                    continue
+
+                elif chunk['value'] == OP_ELSE:
+                    if len(self.ifstack) == 0:
+                        raise ScriptException("Script attempted OP_ELSE on empty if-stack")
+                    self.ifstack.append(not ifstack.pop())
+                    continue
+
+                elif chunk['value'] == OP_ENDIF:
+                    if len(self.ifstack) == 0:
+                        raise ScriptException("Script attempted OP_ENDIF on empty if-stack")
+                    self.ifstack.pop()
+                    continue
 
     def cast_to_bool(data):
         """Evaluate data to boolean. Exclude 0x80 from last byte because "Can be negative zero" -reference client.
