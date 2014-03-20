@@ -140,12 +140,12 @@ class Script(object):
                 #
 
                 if chunk['value'] == OP_1NEGATE:
-                    self.datastack.add(num2mpi(-1, include_length=False))
+                    self.datastack.add(int_to_scriptnum(-1))
                     continue
 
                 if chunk['value'] >= OP_1 and chunk['value'] <= OP_16:
                     push_value = chunk['value'] + 1 - OP_1 # 1 for OP_1, 2 for OP_2, ..., 16 for OP_16
-                    self.datastack.add(num2mpi(push_value, include_length=False))
+                    self.datastack.add(int_to_scriptnum(push_value))
                     continue
 
                 #
@@ -173,6 +173,14 @@ class Script(object):
         """Evaluate data to boolean. Exclude 0x80 from last byte because "Can be negative zero" -reference client.
         https://github.com/bitcoin/bitcoin/blob/0.9.0/src/script.cpp#L44"""
         return any([b != 0 for b in data[:-1]]) or (data[-1] != 0 and data[-1] != 0x80)
+
+    def int_to_scriptnum(num):
+        """Convert an integer to the interesting number format used in Script. See https://en.bitcoin.it/wiki/Script"""
+        return num2mpi(num, include_length=False)[::-1]
+
+    def scriptnum_to_int(snum):
+        """Convert the interesting number format used in Script to an integer. See https://en.bitcoin.it/wiki/Script"""
+        return mpi2num(snum[::-1], has_length=False)
 
 class ScriptFailure(Exception):
     """Thrown if a valid operation caused the script to fail verification."""
