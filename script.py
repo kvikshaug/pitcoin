@@ -80,7 +80,7 @@ class Script(object):
         for chunk in self.chunks:
 
             # Handles the current flow control (execute or not)
-            execute = not self.ifstack.contains(False)
+            execute = False not in self.ifstack
 
             if chunk['type'] == 'data':
                 # Verify chunk length
