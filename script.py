@@ -36,6 +36,7 @@ class Script(object):
 
     def __init__(self, script):
         self.datastack = []
+        self.altstack = [] # Alternative data stack
         self.ifstack = []
         self.chunks = []
         self.parse(script)
@@ -169,6 +170,142 @@ class Script(object):
 
                 if chunk['value'] == OP_RETURN:
                     raise ScriptFailure("Script used OP_RETURN")
+
+                #
+                # STACK OPERATIONS
+                #
+
+                if chunk['value'] == OP_TOALTSTACK:
+                    if len(self.datastack) < 1:
+                        raise ScriptException("Script attempted OP_TOALTSTACK on empty stack")
+                    self.altstack.append(self.datastack.pop())
+                    continue
+
+                if chunk['value'] == OP_FROMALTSTACK:
+                    if len(self.altstack) < 1:
+                        raise ScriptException("Script attempted OP_FROMALTSTACK on empty stack")
+                    self.datastack.append(self.altstack.pop())
+                    continue
+
+                if chunk['value'] == OP_2DROP:
+                    if len(self.datastack) < 2:
+                        raise ScriptException("Script attempted OP_2DROP on too small stack")
+                    self.datastack.pop()
+                    self.datastack.pop()
+                    continue
+
+                if chunk['value'] == OP_2DUP:
+                    if len(self.datastack) < 2:
+                        raise ScriptException("Script attempted OP_2DUP on too small stack")
+                    self.datastack.append(self.datastack[-2])
+                    self.datastack.append(self.datastack[-2])
+                    continue
+
+                if chunk['value'] == OP_3DUP:
+                    if len(self.datastack) < 3:
+                        raise ScriptException("Script attempted OP_3DUP on too small stack")
+                    self.datastack.append(self.datastack[-3])
+                    self.datastack.append(self.datastack[-3])
+                    self.datastack.append(self.datastack[-3])
+                    continue
+
+                if chunk['value'] == OP_2OVER:
+                    if len(self.datastack) < 4:
+                        raise ScriptException("Script attempted OP_2OVER on too small stack")
+                    self.datastack.append(self.datastack[-4])
+                    self.datastack.append(self.datastack[-4])
+                    continue
+
+                if chunk['value'] == OP_2ROT:
+                    if len(self.datastack) < 6:
+                        raise ScriptException("Script attempted OP_2ROT on too small stack")
+                    self.datastack.append(self.datastack.pop(-6))
+                    self.datastack.append(self.datastack.pop(-6))
+                    continue
+
+                if chunk['value'] == OP_2SWAP:
+                    if len(self.datastack) < 4:
+                        raise ScriptException("Script attempted OP_2SWAP on too small stack")
+                    self.datastack.insert(len(self.datastack) - 4, self.datastack.pop())
+                    self.datastack.insert(len(self.datastack) - 4, self.datastack.pop())
+                    continue
+
+                if chunk['value'] == OP_IFDUP:
+                    if len(self.datastack) < 1:
+                        raise ScriptException("Script attempted OP_2ROT on empty stack")
+                    if cast_to_bool(self.datastack[-1]):
+                        self.datastack.append(self.datastack[-1])
+                    continue
+
+                if chunk['value'] == OP_DEPTH:
+                    self.datastack.append(int_to_scriptnum(len(self.datastack)))
+                    continue
+
+                if chunk['value'] == OP_DROP:
+                    if len(self.datastack) < 1:
+                        raise ScriptException("Script attempted OP_DROP on empty stack")
+                    self.datastack.pop()
+                    continue
+
+                if chunk['value'] == OP_DUP:
+                    if len(self.datastack) < 1:
+                        raise ScriptException("Script attempted OP_DUP on empty stack")
+                    self.datastack.append(self.datastack[-1])
+                    continue
+
+                if chunk['value'] == OP_NIP:
+                    if len(self.datastack) < 2:
+                        raise ScriptException("Script attempted OP_NIP on too small stack")
+                    self.datastack.pop(-2)
+                    continue
+
+                if chunk['value'] == OP_OVER:
+                    if len(self.datastack) < 2:
+                        raise ScriptException("Script attempted OP_OVER on too small stack")
+                    self.datastack.append(self.datastack[-2])
+                    continue
+
+                if chunk['value'] == OP_PICK:
+                    if len(self.datastack) < 2:
+                        raise ScriptException("Script attempted OP_PICK on too small stack")
+                    n = scriptnum_to_int(self.datastack.pop())
+                    if n < 0 or n > len(self.datastack):
+                        raise ScriptException("OP_PICK at index %s on too small stack" % n)
+                    self.datastack.append(self.datastack[(n + 1) * -1])
+                    continue
+
+                if chunk['value'] == OP_ROLL:
+                    if len(self.datastack) < 2:
+                        raise ScriptException("Script attempted OP_ROLL on too small stack")
+                    n = scriptnum_to_int(self.datastack.pop())
+                    if n < 0 or n > len(self.datastack):
+                        raise ScriptException("OP_ROLL at index %s on too small stack" % n)
+                    self.datastack.append(self.datastack.pop((n + 1) * -1))
+                    continue
+
+                if chunk['value'] == OP_ROT:
+                    if len(self.datastack) < 3:
+                        raise ScriptException("Script attempted OP_ROT on too small stack")
+                    self.datastack.append(self.datastack.pop(-3))
+                    continue
+
+                if chunk['value'] == OP_SWAP:
+                    if len(self.datastack) < 2:
+                        raise ScriptException("Script attempted OP_SWAP on too small stack")
+                    self.datastack.append(self.datastack.pop(-2))
+                    continue
+
+                if chunk['value'] == OP_TUCK:
+                    if len(self.datastack) < 2:
+                        raise ScriptException("Script attempted OP_TUCK on too small stack")
+                    self.datastack.insert(len(self.datastack) - 2, self.datastack[-1])
+                    continue
+
+                if chunk['value'] == OP_SIZE:
+                    if len(self.datastack) < 1:
+                        raise ScriptException("Script attempted OP_SIZE on empty stack")
+                    self.datastack.push(int_to_scriptnum(len(self.datastack[-1])))
+                    continue
 
     def cast_to_bool(data):
         """Evaluate data to boolean. Exclude 0x80 from last byte because "Can be negative zero" -reference client.
