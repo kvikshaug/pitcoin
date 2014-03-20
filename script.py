@@ -148,6 +148,15 @@ class Script(object):
                     self.datastack.add(num2mpi(push_value, include_length=False))
                     continue
 
+                #
+                # NOPES
+                #
+
+                if chunk['value'] in [OP_NOP, OP_NOP1, OP_NOP2, OP_NOP3, OP_NOP4, OP_NOP5, OP_NOP6, OP_NOP7, OP_NOP8,
+                    OP_NOP9, OP_NOP10]:
+                    continue
+
+
     def cast_to_bool(data):
         """Evaluate data to boolean. Exclude 0x80 from last byte because "Can be negative zero" -reference client.
         https://github.com/bitcoin/bitcoin/blob/0.9.0/src/script.cpp#L44"""
