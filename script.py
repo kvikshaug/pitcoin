@@ -32,6 +32,7 @@ class Script(object):
 
     MAX_SCRIPT_DATA_SIZE = 520
     MAX_OPCODE_COUNT = 201
+    MAX_SCRIPTNUM_SIZE = 4
 
     def __init__(self, script):
         self.datastack = []
@@ -180,6 +181,9 @@ class Script(object):
 
     def scriptnum_to_int(snum):
         """Convert the interesting number format used in Script to an integer. See https://en.bitcoin.it/wiki/Script"""
+        if len(snum) > MAX_SCRIPTNUM_SIZE:
+            # See https://github.com/bitcoin/bitcoin/blob/0.9.0/src/script.cpp#L38
+            raise ScriptException("Script tried to use an integer larger than %s bytes" % MAX_SCRIPTNUM_SIZE)
         return mpi2num(snum[::-1], has_length=False)
 
 class ScriptFailure(Exception):
