@@ -135,6 +135,19 @@ class Script(object):
                     # Done with control operations and not executing. Skip ahead to next operation
                     continue
 
+                #
+                # PUSH VALUE
+                #
+
+                if chunk['value'] == OP_1NEGATE:
+                    self.datastack.add(num2mpi(-1, include_length=False))
+                    continue
+
+                if chunk['value'] >= OP_1 and chunk['value'] <= OP_16:
+                    push_value = chunk['value'] + 1 - OP_1 # 1 for OP_1, 2 for OP_2, ..., 16 for OP_16
+                    self.datastack.add(num2mpi(push_value, include_length=False))
+                    continue
+
     def cast_to_bool(data):
         """Evaluate data to boolean. Exclude 0x80 from last byte because "Can be negative zero" -reference client.
         https://github.com/bitcoin/bitcoin/blob/0.9.0/src/script.cpp#L44"""
