@@ -156,6 +156,18 @@ class Script(object):
                     OP_NOP9, OP_NOP10]:
                     continue
 
+                #
+                # VERIFICATION
+                #
+
+                if chunk['value'] == OP_VERIFY:
+                    if len(self.datastack) < 1:
+                        raise ScriptException("Script attempted OP_VERIFY on empty stack")
+                    if not cast_to_bool(self.datastack.pop()):
+                        raise ScriptFailure("OP_VERIFY failed")
+
+                if chunk['value'] == OP_RETURN:
+                    raise ScriptFailure("Script used OP_RETURN")
 
     def cast_to_bool(data):
         """Evaluate data to boolean. Exclude 0x80 from last byte because "Can be negative zero" -reference client.
