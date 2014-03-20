@@ -162,5 +162,8 @@ class Script(object):
         https://github.com/bitcoin/bitcoin/blob/0.9.0/src/script.cpp#L44"""
         return any([b != 0 for b in data[:-1]]) or (data[-1] != 0 and data[-1] != 0x80)
 
-class ScriptException(Exception):
+class ScriptFailure(Exception):
+    """Thrown if a valid operation caused the script to fail verification."""
+
+class ScriptException(ScriptFailure):
     """Thrown if the provided script has a syntax error or is otherwise invalid according to the Bitcoin Script rules."""
