@@ -51,25 +51,26 @@ class Script(object):
         opcode_count = 0
         while i < len(script):
             opcode = script[i]
+            start_index = i
             i += 1
 
             if opcode >= 0 and opcode < OP_PUSHDATA1:
                 read_length = opcode
-                self.chunks.append({'type': 'data', 'value': script[i:i+read_length]})
+                self.chunks.append({'type': 'data', 'value': script[i:i+read_length], 'start_index': start_index})
                 i += read_length
             elif opcode == OP_PUSHDATA1:
                 read_length = int.from_bytes(script.read(1), byteorder='little')
-                self.chunks.append({'type': 'data', 'value': script[i:i+read_length]})
+                self.chunks.append({'type': 'data', 'value': script[i:i+read_length], 'start_index': start_index})
                 i += read_length
             elif opcode == OP_PUSHDATA2:
                 read_length = int.from_bytes(script.read(2), byteorder='little')
-                self.chunks.append({'type': 'data', 'value': script[i:i+read_length]})
+                self.chunks.append({'type': 'data', 'value': script[i:i+read_length], 'start_index': start_index})
                 i += read_length
             elif opcode == OP_PUSHDATA4:
                 # OP_PUSHDATA4 should never be used, as pushes over 520 bytes are not allowed, and
                 # those below can be done using OP_PUSHDATA2, but we'll implement it nevertheless
                 read_length = int.from_bytes(script.read(4), byteorder='little')
-                self.chunks.append({'type': 'data', 'value': script[i:i+read_length]})
+                self.chunks.append({'type': 'data', 'value': script[i:i+read_length], 'start_index': start_index})
                 i += read_length
             else:
                 if opcode >= OP_NOP:
@@ -78,13 +79,16 @@ class Script(object):
                     opcode_count += 1
                     if opcode_count > Script.MAX_OPCODE_COUNT:
                         raise ScriptException("Script contains more than the allowed %s opcodes" % Script.MAX_OPCODE_COUNT)
-                self.chunks.append({'type': 'opcode', 'value': opcode})
+                self.chunks.append({'type': 'opcode', 'value': opcode, 'start_index': start_index})
 
     def execute(self):
         for chunk in self.chunks:
 
             # Handles the current flow control (execute or not)
             execute = False not in self.ifstack
+
+            # Used by OP_CODESEPARATOR, OP_CHECK[MULTI]SIG*
+            last_code_separator_index = 0
 
             if chunk['type'] == 'data':
                 # Verify chunk length
@@ -447,6 +451,24 @@ class Script(object):
                     res = hashlib.new('sha256', res).digest()
                     self.datastack.append(res)
                     continue
+
+                if chunk['value'] == OP_CODESEPARATOR:
+                    last_code_separator_index = chunk['start_index'] + 1
+
+                if chunk['value'] in [OP_CHECKSIG, OP_CHECKSIGVERIFY]:
+                    if len(self.datastack) < 2:
+                        raise ScriptException("Script attempted OP_CHECKSIG* on too small stack")
+
+                    pub_key = self.datastack.pop()
+                    signature = self.datastack.pop()
+
+                    # TODO: WIP
+
+                    if chunk['value'] == OP_CHECKSIG:
+                        self.datastack.append(bytes[sig_valid])
+                    elif chunk['value'] == OP_CHECKSIGVERIFY:
+                        if not sig_valid:
+                            raise ScriptFailure("OP_CHECKSIGVERIFY failed")
 
     def cast_to_bool(data):
         """Evaluate data to boolean. Exclude 0x80 from last byte because "Can be negative zero" -reference client.
