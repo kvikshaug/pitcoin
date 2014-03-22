@@ -1,5 +1,5 @@
 env/
-db/local_settings.py
+pitcoin/db/local_settings.py
 *.py[cod]
 
 # C extensions

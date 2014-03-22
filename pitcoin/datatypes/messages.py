@@ -6,10 +6,10 @@ from io import BytesIO
 import binascii
 import hashlib
 
+from net.exceptions import UnknownCommand
+from util import compact
 from .meta import DataModel
 from . import structures, values, fields
-from ..exceptions import UnknownCommand
-from .. import util
 
 class Version(DataModel):
     command = b"version"
@@ -150,7 +150,7 @@ class Block(DataModel):
 
     def calculate_claimed_target(self):
         """Calculates the target based on the claimed difficulty bits, which should normally not be trusted"""
-        return util.bits_to_target(self.bits)
+        return compact.bits_to_target(self.bits)
 
     def validate_claimed_proof_of_work(self):
         """Validate proof of work based on the difficulty claimed by the block creator"""

@@ -2,7 +2,7 @@ import calendar
 
 from django.db import models
 
-from protocoin.datatypes.messages import Block as PBlock
+from datatypes.messages import Block as PBlock
 
 class Block(models.Model):
     #

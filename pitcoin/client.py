@@ -1,12 +1,11 @@
 import time
 import os
 
-from protocoin.clients import BitcoinClient
-from protocoin.datatypes import messages
-
 # Configure Django settings before importing local code
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "db.settings")
 
+from net.clients import BitcoinClient
+from datatypes import messages
 from address import AddressBook
 from sync import Synchronizer
 

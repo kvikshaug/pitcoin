@@ -1,8 +1,7 @@
 from datetime import datetime
 
-from protocoin.clients import BitcoinClient
-from protocoin.datatypes import messages, fields
-
+from net.clients import BitcoinClient
+from datatypes import messages, fields
 from address import AddressBook
 from db.models import Block
 import validator

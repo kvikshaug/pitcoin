@@ -1,8 +1,7 @@
 import hashlib
 
-from protocoin.clients import BitcoinClient
-from protocoin.datatypes import messages, structures, values
-
+from net.clients import BitcoinClient
+from datatypes import messages, structures, values
 from db.models import Block
 from script_opcodes import *
 from util.mpi import num2mpi, mpi2num

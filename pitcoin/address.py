@@ -4,9 +4,9 @@ import random
 import socket
 import time
 
-from protocoin.clients import BitcoinClient
-from protocoin.datatypes import messages
-from protocoin.exceptions import NodeDisconnected
+from net.clients import BitcoinClient
+from net.exceptions import NodeDisconnected
+from datatypes import messages
 
 from models import Node
 

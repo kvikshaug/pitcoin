@@ -1,9 +1,8 @@
-from protocoin.datatypes import values
-from protocoin import util
-
+from datatypes import values
+from util import compact
 from db.models import Block
 
-max_target = util.bits_to_target(values.HIGHEST_TARGET_BITS)
+max_target = compact.bits_to_target(values.HIGHEST_TARGET_BITS)
 target_timespan = 60 * 60 * 24 * 7 * 2 # We want 2016 blocks to take 2 weeks.
 retarget_interval = 2016 # Blocks
 
@@ -29,14 +28,14 @@ def get_target(block_message, prev_block):
     from testnet import testnet
 
     current_height = prev_block.height + 1
-    target = util.bits_to_target(prev_block.bits)
+    target = compact.bits_to_target(prev_block.bits)
 
     # If testnet, don't use 20-minute-rule targets; iterate backwards to last proper target
     if testnet:
         height = current_height - 1
         while height > 0 and height % retarget_interval != 0:
             height -= 1
-        target = util.bits_to_target(Block.objects.get(height=height).bits)
+        target = compact.bits_to_target(Block.objects.get(height=height).bits)
 
     if current_height % retarget_interval == 0:
         target = retarget(target, prev_block)
@@ -70,7 +69,7 @@ def retarget(target, prev_block):
     target /= target_timespan
 
     # Round the target with the packed representation
-    target = util.bits_to_target(util.target_to_bits(target))
+    target = compact.bits_to_target(compact.target_to_bits(target))
 
     # Never exceed the maximum target
     if target > max_target:
