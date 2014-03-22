@@ -36,14 +36,17 @@ from sync import Synchronizer
 #         print("-> %s" % message_header)
 
 print("1. Fetching addresses...")
-AddressBook.bootstrap()
-AddressBook.keep_updated()
+# AddressBook.bootstrap()
+# AddressBook.keep_updated()
 print("   Got %s initial addresses." % len(AddressBook.addresses))
 
 print("2. Synchronizing all blocks...")
-Synchronizer.synchronize()
+# Synchronizer.synchronize()
 
 print("3. Done!")
+
+from script import run
+run()
 
 
 
