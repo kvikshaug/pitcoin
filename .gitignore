@@ -1,4 +1,5 @@
 env/
+db/local_settings.py
 *.py[cod]
 
 # C extensions
