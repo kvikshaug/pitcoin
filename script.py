@@ -307,6 +307,24 @@ class Script(object):
                     self.datastack.push(int_to_scriptnum(len(self.datastack[-1])))
                     continue
 
+                #
+                # BITWISE LOGIC
+                #
+
+                if chunk['value'] == OP_EQUAL:
+                    if len(self.datastack) < 2:
+                        raise ScriptException("Script attempted OP_EQUAL on too small stack")
+                    res = self.datastack.pop() == self.datastack.pop()
+                    self.datastack.append(bytes([res]))
+                    continue
+
+                if chunk['value'] == OP_EQUALVERIFY:
+                    if len(self.datastack) < 2:
+                        raise ScriptException("Script attempted OP_EQUALVERIFY on too small stack")
+                    if not self.datastack.pop() == self.datastack.pop():
+                        raise ScriptFailure("OP_EQUALVERIFY failed")
+                    continue
+
     def cast_to_bool(data):
         """Evaluate data to boolean. Exclude 0x80 from last byte because "Can be negative zero" -reference client.
         https://github.com/bitcoin/bitcoin/blob/0.9.0/src/script.cpp#L44"""
