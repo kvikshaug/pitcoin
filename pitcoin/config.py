@@ -16,7 +16,7 @@ LOGGING = {
         # 'file': {
         #    'level': 'DEBUG',
         #    'class': 'logging.FileHandler',
-        #    'filename': 'protocoin.log',
+        #    'filename': 'pitcoin.log',
         #    'formatter': 'verbose',
         # },
         'console': {
@@ -32,4 +32,4 @@ LOGGING = {
 }
 
 dictConfig(LOGGING)
-logger = logging.getLogger('protocoin')
+logger = logging.getLogger('pitcoin')

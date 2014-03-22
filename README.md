@@ -1,7 +1,9 @@
-# Protocoin - Bitcoin Protocol
+# Pitcoin
 
-A pure Python bitcoin protocol implementation.
+A full-featured bitcoin client implemented in Python 3.
 
-## Documentation
+Pitcoin is still under heavy development and not usable in its current form.
 
-See the [documentation](http://protocoin.readthedocs.org/) for more information.
+## Credits
+
+The initial code was originally based on [Christian S. Perone's protocoin](https://github.com/perone/protocoin).
