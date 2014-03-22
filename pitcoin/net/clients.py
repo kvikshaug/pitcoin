@@ -156,8 +156,8 @@ class BitcoinBasicClient(object):
                         break
 
                     header, message, more_data = data
-                    if hasattr(self, "handle_%s" % header.command.decode('ascii')):
-                        getattr(self, "handle_%s" % header.command.decode('ascii'))(header, message)
+                    if hasattr(self, "handle_%s" % header.command):
+                        getattr(self, "handle_%s" % header.command)(header, message)
                     if not more_data:
                         break
             except (InvalidChecksum, UnknownCommand) as e:

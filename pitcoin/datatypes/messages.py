@@ -8,18 +8,22 @@ import hashlib
 
 from net.exceptions import UnknownCommand
 from util import compact
-from .meta import DataModel
+from .meta import Field, BitcoinSerializable
 from . import structures, values, fields
 
-class Version(DataModel):
-    command = b"version"
-    version = fields.Int32LEField(default=values.PROTOCOL_VERSION)
-    services = fields.UInt64LEField(default=values.SERVICES["NODE_NETWORK"])
-    timestamp = fields.Int64LEField(default=lambda: int(time.time()))
-    addr_recv = structures.IPv4Address()
-    addr_from = structures.IPv4Address()
-    nonce = fields.UInt64LEField(default=lambda: random.randint(0, 2**32-1))
-    user_agent = fields.VariableStringField(default=b"/Perone:0.0.1/")
+class Version(BitcoinSerializable):
+    command = "version"
+    def __init__(self, *args, **kwargs):
+        self._fields = [
+            Field('version', fields.Int32LEField(), default=values.PROTOCOL_VERSION),
+            Field('services', fields.UInt64LEField(), default=values.SERVICES["NODE_NETWORK"]),
+            Field('timestamp', fields.Int64LEField(), default=lambda: int(time.time())),
+            Field('addr_recv', structures.IPv4Address()),
+            Field('addr_from', structures.IPv4Address()),
+            Field('nonce', fields.UInt64LEField(), default=lambda: random.randint(0, 2**32-1)),
+            Field('user_agent', fields.VariableStringField(), default="/Perone:0.0.1/"),
+        ]
+        super().__init__(*args, **kwargs)
 
     def _services_to_text(self):
         """Converts the services field into a textual
@@ -38,27 +42,42 @@ class Version(DataModel):
             (self.__class__.__name__, self.version, services, time.ctime(self.timestamp), self.addr_recv,
             self.addr_from, self.nonce, self.user_agent)
 
-class VerAck(DataModel):
+class VerAck(BitcoinSerializable):
     """The version acknowledge (verack) command."""
-    command = b"verack"
+    command = "verack"
+    def __init__(self, *args, **kwargs):
+        self._fields = []
+        super().__init__(*args, **kwargs)
 
-class Ping(DataModel):
-    command = b"ping"
-    nonce = fields.UInt64LEField(default=lambda: random.randint(0, 2**32-1))
+class Ping(BitcoinSerializable):
+    command = "ping"
+    def __init__(self, *args, **kwargs):
+        self._fields = [
+            Field('nonce', fields.UInt64LEField(), default=lambda: random.randint(0, 2**32-1)),
+        ]
+        super().__init__(*args, **kwargs)
 
     def __repr__(self):
         return "<%s Nonce=[%d]>" % (self.__class__.__name__, self.nonce)
 
-class Pong(DataModel):
-    command = b"pong"
-    nonce = fields.UInt64LEField(default=lambda: random.randint(0, 2**32-1))
+class Pong(BitcoinSerializable):
+    command = "pong"
+    def __init__(self, *args, **kwargs):
+        self._fields = [
+            Field('nonce', fields.UInt64LEField(), default=lambda: random.randint(0, 2**32-1)),
+        ]
+        super().__init__(*args, **kwargs)
 
     def __repr__(self):
         return "<%s Nonce=[%d]>" % (self.__class__.__name__, self.nonce)
 
-class InventoryVector(DataModel):
-    command = b"inv"
-    inventory = fields.ListField(structures.Inventory)
+class InventoryVector(BitcoinSerializable):
+    command = "inv"
+    def __init__(self, *args, **kwargs):
+        self._fields = [
+            Field('inventory', fields.ListField(structures.Inventory), default=[]),
+        ]
+        super().__init__(*args, **kwargs)
 
     def __repr__(self):
         return "<%s Count=[%d]>" % (self.__class__.__name__, len(self))
@@ -69,9 +88,13 @@ class InventoryVector(DataModel):
     def __iter__(self):
         return iter(self.inventory)
 
-class AddressVector(DataModel):
-    command = b"addr"
-    addresses = fields.ListField(structures.IPv4AddressTimestamp)
+class AddressVector(BitcoinSerializable):
+    command = "addr"
+    def __init__(self, *args, **kwargs):
+        self._fields = [
+            Field('addresses', fields.ListField(structures.IPv4AddressTimestamp), default=[]),
+        ]
+        super().__init__(*args, **kwargs)
 
     def __repr__(self):
         return "<%s Count=[%d]>" % (self.__class__.__name__, len(self))
@@ -82,26 +105,36 @@ class AddressVector(DataModel):
     def __iter__(self):
         return iter(self.addresses)
 
-class GetData(DataModel):
-    command = b"getdata"
-    inventory = fields.ListField(structures.Inventory)
+class GetData(BitcoinSerializable):
+    command = "getdata"
+    def __init__(self, *args, **kwargs):
+        self._fields = [
+            Field('inventory', fields.ListField(structures.Inventory), default=[]),
+        ]
+        super().__init__(*args, **kwargs)
 
-class NotFound(GetData):
-    """NotFound command message."""
-    command = b"notfound"
-    inventory = fields.ListField(structures.Inventory)
+class NotFound(BitcoinSerializable):
+    command = "notfound"
+    def __init__(self, *args, **kwargs):
+        self._fields = [
+            Field('inventory', fields.ListField(structures.Inventory), default=[]),
+        ]
+        super().__init__(*args, **kwargs)
 
     def __repr__(self):
         return "<%s Inv Count[%d]>" % (self.__class__.__name__, len(self.inventory))
 
-class Tx(DataModel):
-    """The main transaction representation, this object will
-    contain all the inputs and outputs of the transaction."""
-    command = b"tx"
-    version = fields.UInt32LEField(default=0)
-    tx_in = fields.ListField(structures.TxIn)
-    tx_out = fields.ListField(structures.TxOut)
-    lock_time = fields.UInt32LEField(default=0)
+class Tx(BitcoinSerializable):
+    """The main transaction representation, this object will contain all the inputs and outputs of the transaction."""
+    command = "tx"
+    def __init__(self, *args, **kwargs):
+        self._fields = [
+            Field('version', fields.UInt32LEField(), default=0),
+            Field('tx_in', fields.ListField(structures.TxIn), default=[]),
+            Field('tx_out', fields.ListField(structures.TxOut), default=[]),
+            Field('lock_time', fields.UInt32LEField(), default=0),
+        ]
+        super().__init__(*args, **kwargs)
 
     def _locktime_to_text(self):
         """Converts the lock-time to textual representation."""
@@ -119,16 +152,20 @@ class Tx(DataModel):
             % (self.__class__.__name__, self.version, self._locktime_to_text(),
                 len(self.tx_in), len(self.tx_out))
 
-class Block(DataModel):
+class Block(BitcoinSerializable):
     """The block message. This message contains all the transactions present in the block."""
-    command = b"block"
-    version = fields.UInt32LEField(default=0)
-    prev_block = fields.Hash(default=0)
-    merkle_root = fields.Hash(default=0)
-    timestamp = fields.UInt32LEField(default=0)
-    bits = fields.UInt32LEField(default=0)
-    nonce = fields.UInt32LEField(default=0)
-    txns = fields.ListField(Tx)
+    command = "block"
+    def __init__(self, *args, **kwargs):
+        self._fields = [
+            Field('version', fields.UInt32LEField(), default=0),
+            Field('prev_block', fields.Hash(), default=0),
+            Field('merkle_root', fields.Hash(), default=0),
+            Field('timestamp', fields.UInt32LEField(), default=0),
+            Field('bits', fields.UInt32LEField(), default=0),
+            Field('nonce', fields.UInt32LEField(), default=0),
+            Field('txns', fields.ListField(Tx), default=[]),
+        ]
+        super().__init__(*args, **kwargs)
 
     def __len__(self):
         return len(self.txns)
@@ -140,10 +177,10 @@ class Block(DataModel):
         return "{:064x}".format(self.prev_block)
 
     def calculate_hash(self):
-        hash_fields = ["version", "prev_block", "merkle_root", "timestamp", "bits", "nonce"]
+        hash_fields = [f for f in self._fields if f.name != 'txns']
         stream = BytesIO()
-        for field_name in hash_fields:
-            self._fields[field_name].serialize(stream)
+        for field in hash_fields:
+            field.serializer.serialize(stream, getattr(self, field.name))
         h = hashlib.sha256(stream.getvalue()).digest()
         h = hashlib.sha256(h).digest()
         return binascii.hexlify(h[::-1]).decode('ascii')
@@ -165,10 +202,14 @@ class Block(DataModel):
             (self.__class__.__name__, self.version, time.ctime(self.timestamp), self.nonce,
             self.calculate_hash(), len(self.txns))
 
-class HeaderVector(DataModel):
+class HeaderVector(BitcoinSerializable):
     """The header only vector."""
-    command = b"headers"
-    headers = fields.ListField(Block)
+    command = "headers"
+    def __init__(self, *args, **kwargs):
+        self._fields = [
+            Field('headers', fields.ListField(Block), default=[]),
+        ]
+        super().__init__(*args, **kwargs)
 
     def __repr__(self):
         return "<%s Count=[%d]>" % (self.__class__.__name__, len(self))
@@ -179,25 +220,33 @@ class HeaderVector(DataModel):
     def __iter__(self):
         return iter(self.headers)
 
-class MemPool(DataModel):
-    """The mempool command."""
-    command = b"mempool"
+class MemPool(BitcoinSerializable):
+    command = "mempool"
+    def __init__(self, *args, **kwargs):
+        self._fields = []
+        super().__init__(*args, **kwargs)
 
-class GetAddr(DataModel):
-    """The getaddr command."""
-    command = b"getaddr"
+class GetAddr(BitcoinSerializable):
+    command = "getaddr"
+    def __init__(self, *args, **kwargs):
+        self._fields = []
+        super().__init__(*args, **kwargs)
 
-class GetBlocks(DataModel):
-    command = b"getblocks"
-    version = fields.UInt32LEField(default=values.PROTOCOL_VERSION)
-    block_locator_hashes = fields.ListField(fields.Hash)
-    hash_stop = fields.Hash(default=0)
+class GetBlocks(BitcoinSerializable):
+    command = "getblocks"
+    def __init__(self, *args, **kwargs):
+        self._fields = [
+            Field('version', fields.UInt32LEField(), values.PROTOCOL_VERSION),
+            Field('block_locator_hashes', fields.ListField(fields.Hash), default=[]),
+            Field('hash_stop', fields.Hash(), 0),
+        ]
+        super().__init__(*args, **kwargs)
 
     def __repr__(self):
         return "<%s Version=[%d] HashCount=[%d]>" % \
-            (self.__class__.__name__, self.version, self.hash_count)
+            (self.__class__.__name__, self.version, len(self.block_locator_hashes))
 
-MESSAGES = {c.command: c for name, c in inspect.getmembers(sys.modules[__name__]) if inspect.isclass(c) and issubclass(c, DataModel) and c is not DataModel}
+MESSAGES = {c.command: c for name, c in inspect.getmembers(sys.modules[__name__]) if inspect.isclass(c) and issubclass(c, BitcoinSerializable) and c is not BitcoinSerializable}
 def deserialize(command, stream):
     try:
         return MESSAGES[command](stream=stream)

@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from net.clients import BitcoinClient
-from datatypes import messages, fields
+from datatypes import messages
 from address import AddressBook
 from db.models import Block
 import validator
@@ -78,9 +78,7 @@ class Synchronizer(object):
         step = 1
         hashes = []
         while i >= 0:
-            field = fields.Hash()
-            field.set_value(int(Block.objects.get(height=i).calculate_hash(), 16))
-            hashes.append(field)
+            hashes.append(int(Block.objects.get(height=i).calculate_hash(), 16))
             if i <= top - 10:
                 step *= 2
             i -= step

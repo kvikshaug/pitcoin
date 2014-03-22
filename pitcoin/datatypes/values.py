@@ -25,3 +25,6 @@ INVENTORY_TYPE = {
 
 # Highest block hash target, difficulty 1. See https://en.bitcoin.it/wiki/Difficulty
 HIGHEST_TARGET_BITS = 0x1d00ffff
+
+# The character encoding
+STRING_ENCODING = 'iso-8859-1' # This is likely not correct, but seems to work for now

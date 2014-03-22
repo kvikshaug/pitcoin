@@ -2,15 +2,19 @@ import hashlib
 import time
 import struct
 
-from .meta import DataModel
+from .meta import Field, BitcoinSerializable
 from . import fields, values
 
-class MessageHeader(DataModel):
+class MessageHeader(BitcoinSerializable):
     """The header of all bitcoin messages."""
-    magic = fields.UInt32LEField(default=values.MAGIC_VALUES['bitcoin'])
-    command = fields.FixedStringField(length=12, default=None)
-    length = fields.UInt32LEField(default=0)
-    checksum = fields.UInt32LEField(default=0)
+    def __init__(self, *args, **kwargs):
+        self._fields = [
+            Field('magic', fields.UInt32LEField(), default=values.MAGIC_VALUES['bitcoin']),
+            Field('command', fields.FixedStringField(length=12)),
+            Field('length', fields.UInt32LEField(), default=0),
+            Field('checksum', fields.UInt32LEField(), default=0),
+        ]
+        super().__init__(*args, **kwargs)
 
     def set_coin(self, coin):
         self.magic = values.MAGIC_VALUES[coin]
@@ -41,11 +45,15 @@ class MessageHeader(DataModel):
         checksum = sha256hash.digest()[:4]
         return struct.unpack("<I", checksum)[0]
 
-class IPv4Address(DataModel):
+class IPv4Address(BitcoinSerializable):
     """The IPv4 Address (without timestamp)."""
-    services = fields.UInt64LEField(default=values.SERVICES["NODE_NETWORK"])
-    ip_address = fields.IPv4AddressField(default="0.0.0.0")
-    port = fields.UInt16BEField(default=8333)
+    def __init__(self, *args, **kwargs):
+        self._fields = [
+            Field('services', fields.UInt64LEField(), default=values.SERVICES["NODE_NETWORK"]),
+            Field('ip_address', fields.IPv4AddressField(), default="0.0.0.0"),
+            Field('port', fields.UInt16BEField(), default=8333),
+        ]
+        super().__init__(*args, **kwargs)
 
     def _services_to_text(self):
         """Converts the services field into a textual
@@ -62,19 +70,27 @@ class IPv4Address(DataModel):
             services = "No Services"
         return "<%s IP=[%s:%d] Services=%r>" % (self.__class__.__name__, self.ip_address, self.port, services)
 
-class IPv4AddressTimestamp(DataModel):
+class IPv4AddressTimestamp(BitcoinSerializable):
     """The IPv4 Address with timestamp."""
-    timestamp = fields.UInt32LEField(default=lambda: time.time())
-    address = IPv4Address()
+    def __init__(self, *args, **kwargs):
+        self._fields = [
+            Field('timestamp', fields.UInt32LEField(), default=lambda: time.time()),
+            Field('address', IPv4Address()),
+        ]
+        super().__init__(*args, **kwargs)
 
     def __repr__(self):
         return "<%s Timestamp=[%s] Address=[%r]>" % \
             (self.__class__.__name__, time.ctime(self.timestamp), self.address)
 
-class Inventory(DataModel):
+class Inventory(BitcoinSerializable):
     """The Inventory representation."""
-    inv_type = fields.UInt32LEField(default=values.INVENTORY_TYPE["MSG_TX"])
-    inv_hash = fields.Hash(default=0)
+    def __init__(self, *args, **kwargs):
+        self._fields = [
+            Field('inv_type', fields.UInt32LEField(), default=values.INVENTORY_TYPE["MSG_TX"]),
+            Field('inv_hash', fields.Hash(), default=0),
+        ]
+        super().__init__(*args, **kwargs)
 
     def type_to_text(self):
         """Converts the inventory type to text representation."""
@@ -87,28 +103,40 @@ class Inventory(DataModel):
         return "<%s Type=[%s] Hash=[%064x]>" % \
             (self.__class__.__name__, self.type_to_text(), self.inv_hash)
 
-class OutPoint(DataModel):
+class OutPoint(BitcoinSerializable):
     """The OutPoint of a transaction."""
-    out_hash = fields.Hash(default=0)
-    index = fields.UInt32LEField(default=0)
+    def __init__(self, *args, **kwargs):
+        self._fields = [
+            Field('out_hash', fields.Hash(), default=0),
+            Field('index', fields.UInt32LEField(), default=0),
+        ]
+        super().__init__(*args, **kwargs)
 
     def __repr__(self):
         return "<%s Index=[%d] Hash=[%064x]>" % \
             (self.__class__.__name__, self.index, self.out_hash)
 
-class TxIn(DataModel):
+class TxIn(BitcoinSerializable):
     """The transaction input representation."""
-    previous_output = OutPoint()
-    signature_script = fields.VariableStringField(default=b"Empty")
-    sequence = fields.UInt32LEField(default=0)
+    def __init__(self, *args, **kwargs):
+        self._fields = [
+            Field('previous_output', OutPoint()),
+            Field('signature_script', fields.VariableByteStringField(), default=b""),
+            Field('sequence', fields.UInt32LEField(), default=0),
+        ]
+        super().__init__(*args, **kwargs)
 
     def __repr__(self):
         return "<%s Sequence=[%d]>" % (self.__class__.__name__, self.sequence)
 
-class TxOut(DataModel):
+class TxOut(BitcoinSerializable):
     """The transaction output."""
-    value = fields.Int64LEField(default=0)
-    pk_script = fields.VariableStringField(default=b"Empty")
+    def __init__(self, *args, **kwargs):
+        self._fields = [
+            Field('value', fields.Int64LEField(), default=0),
+            Field('pk_script', fields.VariableByteStringField(), default=b""),
+        ]
+        super().__init__(*args, **kwargs)
 
     def get_btc_value(self):
         return self.value//100000000 + self.value%100000000/100000000.0
