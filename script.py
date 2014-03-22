@@ -1,3 +1,5 @@
+import hashlib
+
 from protocoin.clients import BitcoinClient
 from protocoin.datatypes import messages, structures, values
 
@@ -404,6 +406,46 @@ class Script(object):
                     val = scriptnum_to_int(self.datastack.pop())
                     res = val >= min_ and val < max_
                     self.datastack.append(bytes([res]))
+                    continue
+
+                #
+                # CRYPTO
+                #
+
+                if chunk['value'] == OP_RIPEMD160:
+                    if len(self.datastack) < 1:
+                        raise ScriptException("Script attempted OP_RIPEMD160 on empty stack")
+                    self.datastack.append(hashlib.new('ripemd160', self.datastack.pop()).digest())
+                    continue
+
+                if chunk['value'] == OP_SHA1:
+                    if len(self.datastack) < 1:
+                        raise ScriptException("Script attempted OP_SHA1 on empty stack")
+                    self.datastack.append(hashlib.new('sha1', self.datastack.pop()).digest())
+                    continue
+
+                if chunk['value'] == OP_SHA256:
+                    if len(self.datastack) < 1:
+                        raise ScriptException("Script attempted OP_SHA256 on empty stack")
+                    self.datastack.append(hashlib.new('sha256', self.datastack.pop()).digest())
+                    continue
+
+                if chunk['value'] == OP_HASH160:
+                    if len(self.datastack) < 1:
+                        raise ScriptException("Script attempted OP_HASH160 on empty stack")
+
+                    res = hashlib.new('sha256', self.datastack.pop()).digest()
+                    res = hashlib.new('ripemd160', res).digest()
+                    self.datastack.append(res)
+                    continue
+
+                if chunk['value'] == OP_HASH256:
+                    if len(self.datastack) < 1:
+                        raise ScriptException("Script attempted OP_HASH256 on empty stack")
+
+                    res = hashlib.new('sha256', self.datastack.pop()).digest()
+                    res = hashlib.new('sha256', res).digest()
+                    self.datastack.append(res)
                     continue
 
     def cast_to_bool(data):
