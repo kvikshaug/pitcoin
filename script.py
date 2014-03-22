@@ -326,6 +326,86 @@ class Script(object):
                         raise ScriptFailure("OP_EQUALVERIFY failed")
                     continue
 
+                #
+                # NUMERIC
+                #
+
+                if chunk['value'] in [OP_1ADD, OP_1SUB, OP_NEGATE, OP_ABS, OP_NOT, OP_0NOTEQUAL]:
+                    if len(self.datastack) < 1:
+                        raise ScriptException("Script attempted single-numeric opcode on empty stack")
+
+                    val = scriptnum_to_int(self.datastack.pop())
+
+                    if chunk['value'] == OP_1ADD:
+                        val += 1
+                    elif chunk['value'] == OP_1SUB:
+                        val -= 1
+                    elif chunk['value'] == OP_NEGATE:
+                        val *= -1
+                    elif chunk['value'] == OP_ABS:
+                        val = abs(val)
+                    elif chunk['value'] == OP_NOT:
+                        val = 1 if val == 0 else 0
+                    elif chunk['value'] == OP_0NOTEQUAL:
+                        val = 0 if val == 0 else 1
+                    else:
+                        raise Exception("Reached unreachable code path, fix your logic")
+
+                    self.datastack.append(int_to_scriptnum(val))
+                    continue
+
+                if chunk['value'] in [OP_ADD, OP_SUB, OP_BOOLAND, OP_BOOLOR, OP_NUMEQUAL, OP_NUMEQUALVERIFY,
+                    OP_NUMNOTEQUAL, OP_LESSTHAN, OP_GREATERTHAN, OP_LESSTHANOREQUAL, OP_GREATERTHANOREQUAL, OP_MIN,
+                    OP_MAX]:
+
+                    if len(self.datastack) < 2:
+                        raise ScriptException("Script attempted double-numeric opcode on too small stack")
+
+                    val2, val1 = scriptnum_to_int(self.datastack.pop()), scriptnum_to_int(self.datastack.pop())
+
+                    if chunk['value'] == OP_ADD:
+                        res = val1 + val2
+                    elif chunk['value'] == OP_SUB:
+                        res = val1 - val2
+                    elif chunk['value'] == OP_BOOLAND:
+                        res = 1 if val1 != 0 and val2 != 0 else 0
+                    elif chunk['value'] == OP_BOOLOR:
+                        res = 1 if val1 != 0 or val2 != 0 else 0
+                    elif chunk['value'] == OP_NUMEQUAL or chunk['value'] == OP_NUMEQUALVERIFY:
+                        res = 1 if val1 == val2 else 0
+                    elif chunk['value'] == OP_NUMNOTEQUAL:
+                        res = 1 if val1 != val2 else 0
+                    elif chunk['value'] == OP_LESSTHAN:
+                        res = 1 if val1 < val2 else 0
+                    elif chunk['value'] == OP_GREATERTHAN:
+                        res = 1 if val1 > val2 else 0
+                    elif chunk['value'] == OP_LESSTHANOREQUAL:
+                        res = 1 if val1 <= val2 else 0
+                    elif chunk['value'] == OP_GREATERTHANOREQUAL:
+                        res = 1 if val1 >= val2 else 0
+                    elif chunk['value'] == OP_MIN:
+                        res = min(val1, val2)
+                    elif chunk['value'] == OP_MAX:
+                        res = max(val1, val2)
+
+                    if chunk['value'] == OP_NUMEQUALVERIFY:
+                        # OP_NUMEQUALVERIFY doesn't add the result to the stack; it just verifies it
+                        if not cast_to_bool(res):
+                            raise ScriptFailure("OP_NUMEQUALVERIFY failed")
+                    else:
+                        self.datastack.append(res)
+                    continue
+
+                if chunk['value'] == OP_WITHIN:
+                    if len(self.datastack) < 3:
+                        raise ScriptException("Script attempted OP_WITHIN on too small stack")
+                    max_ = scriptnum_to_int(self.datastack.pop())
+                    min_ = scriptnum_to_int(self.datastack.pop())
+                    val = scriptnum_to_int(self.datastack.pop())
+                    res = val >= min_ and val < max_
+                    self.datastack.append(bytes([res]))
+                    continue
+
     def cast_to_bool(data):
         """Evaluate data to boolean. Exclude 0x80 from last byte because "Can be negative zero" -reference client.
         https://github.com/bitcoin/bitcoin/blob/0.9.0/src/script.cpp#L44"""
