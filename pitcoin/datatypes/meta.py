@@ -30,8 +30,8 @@ class BitcoinSerializable(object):
         return self
 
     def serialize(self, stream, value=None):
-        """Serialize the current data in this model to the given stream. Ignore the given value
-        Note that we're ignoring the value paramenter which is used by nested fields, but not
-        needed since this is a model structure and not a field."""
+        """Serialize the current data in this model to the given stream. Note that we're
+        ignoring the value paramenter which is used by nested fields, but not needed since
+        this is a model structure and not a field."""
         for field in self._fields:
             field.serializer.serialize(stream, getattr(self, field.name))
