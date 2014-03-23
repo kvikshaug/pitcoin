@@ -1,13 +1,10 @@
 import time
 import random
-import sys
-import inspect
 from io import BytesIO
 import binascii
 import hashlib
 from datetime import datetime
 
-from net.exceptions import UnknownCommand
 from util import compact
 from .meta import Field, BitcoinSerializable
 from . import structures, values, fields
@@ -245,10 +242,3 @@ class GetBlocks(BitcoinSerializable):
     def __repr__(self):
         return "<%s Version=[%d] HashCount=[%d]>" % \
             (self.__class__.__name__, self.version, len(self.block_locator_hashes))
-
-MESSAGES = {c.command: c for name, c in inspect.getmembers(sys.modules[__name__]) if inspect.isclass(c) and issubclass(c, BitcoinSerializable) and c is not BitcoinSerializable}
-def deserialize(command, stream):
-    try:
-        return MESSAGES[command](stream=stream)
-    except IndexError:
-        raise UnknownCommand("Unknown command: %s" % command)

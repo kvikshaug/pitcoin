@@ -6,6 +6,7 @@ import socket
 from datatypes import messages, structures
 from config import logger
 from net.exceptions import NodeDisconnected, UnknownCommand, InvalidChecksum
+from net import messaging
 
 class BitcoinBasicClient(object):
     """The base class for a Bitcoin network client, this class
@@ -99,7 +100,7 @@ class BitcoinBasicClient(object):
                 (header.checksum, payload_checksum))
 
         # Deserialize the message
-        message = messages.deserialize(header.command, BytesIO(payload))
+        message = messaging.deserialize(header.command, BytesIO(payload))
         return (header, message, len(remaining_data) > 0)
 
     def send_message(self, message):
