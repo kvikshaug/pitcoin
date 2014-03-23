@@ -6,25 +6,25 @@ max_target = compact.bits_to_target(values.HIGHEST_TARGET_BITS)
 target_timespan = 60 * 60 * 24 * 7 * 2 # We want 2016 blocks to take 2 weeks.
 retarget_interval = 2016 # Blocks
 
-def validate_block(block_message, prev_block):
+def validate_block(block, prev_block):
     """Validate a new block"""
     # Calculate the current target
-    target = get_target(block_message, prev_block)
+    target = get_target(block, prev_block)
 
-    if block_message.prev_block_hash != prev_block.calculate_hash():
+    if block.prev_hash != prev_block.calculate_hash():
         # TODO: Proper logging
         print("Rejecting block %s: The previous block hash (%s) differs from our latest block hash (%s)" %
-            (block_message, block_message.prev_hash(), prev_block.calculate_hash()))
+            (block, block.prev_hash(), prev_block.calculate_hash()))
         return False
 
-    if not block_message.validate_proof_of_work(target):
+    if not block.validate_proof_of_work(target):
         # TODO proper logging
         print("Block #%s invalid: (%s)" % (prev_block.height + 1, target))
         return False
 
     return True
 
-def get_target(block_message, prev_block):
+def get_target(block, prev_block):
     from testnet import testnet
 
     current_height = prev_block.height + 1
@@ -42,7 +42,7 @@ def get_target(block_message, prev_block):
 
     # 20 minute rule for testnet
     if testnet:
-        if current_height % retarget_interval != 0 and (block_message.timestamp - prev_block.timestamp).seconds > 1200:
+        if current_height % retarget_interval != 0 and (block.timestamp - prev_block.timestamp).seconds > 1200:
             target = max_target
 
     return target

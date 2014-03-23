@@ -28,26 +28,18 @@ class SyncClient(BitcoinClient):
         self.last_expected_block_hash = message.inventory[-1].inv_hash
         self.send_message(messages.GetData(inventory=message.inventory))
 
-    def handle_block(self, header, block_message):
+    def handle_block(self, header, block):
         """Validate and save new blocks"""
-        if not validator.validate_block(block_message, self.prev_block):
+        if not validator.validate_block(block, self.prev_block):
             return
 
         # Save the new block
-        block = Block(
-            version=block_message.version,
-            prev_hash=block_message.prev_block_hash,
-            merkle_root=block_message.merkle_root,
-            timestamp=block_message.timestamp,
-            bits=block_message.bits,
-            nonce=block_message.nonce,
-            prev_block=self.prev_block,
-            height=self.prev_block.height + 1,
-        )
+        block.prev_block = self.prev_block
+        block.height = self.prev_block.height + 1
         block.save()
         self.prev_block = block
 
-        if block_message.calculate_hash() == self.last_expected_block_hash:
+        if block.calculate_hash() == self.last_expected_block_hash:
             # Last hash of the expected invs - fetch more
             self.get_more_blocks()
             # Logic when we're done?

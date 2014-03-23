@@ -1,11 +1,7 @@
 import time
 import random
-from io import BytesIO
-import binascii
-import hashlib
 from datetime import datetime
 
-from util import compact
 from .meta import Field, BitcoinSerializable
 from . import structures, values, fields
 
@@ -150,56 +146,11 @@ class Tx(BitcoinSerializable):
             % (self.__class__.__name__, self.version, self._locktime_to_text(),
                 len(self.tx_in), len(self.tx_out))
 
-class Block(BitcoinSerializable):
-    """The block message. This message contains all the transactions present in the block."""
-    command = "block"
-    def __init__(self, *args, **kwargs):
-        self._fields = [
-            Field('version', fields.UInt32LEField(), default=0),
-            Field('prev_block_hash', fields.Hash(), default="{:064x}".format(0)),
-            Field('merkle_root', fields.Hash(), default="{:064x}".format(0)),
-            Field('timestamp', fields.DatetimeField(fields.UInt32LEField()), default=lambda: datetime.utcnow()),
-            Field('bits', fields.UInt32LEField(), default=0),
-            Field('nonce', fields.UInt32LEField(), default=0),
-            Field('txns', fields.ListField(Tx), default=[]),
-        ]
-        super().__init__(*args, **kwargs)
-
-    def __len__(self):
-        return len(self.txns)
-
-    def __iter__(self):
-        return __iter__(self.txns)
-
-    def calculate_hash(self):
-        hash_fields = [f for f in self._fields if f.name != 'txns']
-        stream = BytesIO()
-        for field in hash_fields:
-            field.serializer.serialize(stream, getattr(self, field.name))
-        h = hashlib.sha256(stream.getvalue()).digest()
-        h = hashlib.sha256(h).digest()
-        return binascii.hexlify(h[::-1]).decode('ascii')
-
-    def calculate_claimed_target(self):
-        """Calculates the target based on the claimed difficulty bits, which should normally not be trusted"""
-        return compact.bits_to_target(self.bits)
-
-    def validate_claimed_proof_of_work(self):
-        """Validate proof of work based on the difficulty claimed by the block creator"""
-        return self.validate_proof_of_work(self.calculate_claimed_target())
-
-    def validate_proof_of_work(self, target):
-        """Validate proof of work based on the given difficulty"""
-        return int(self.calculate_hash(), 16) <= target
-
-    def __repr__(self):
-        return "<%s Version=[%d] Timestamp=[%s] Nonce=[%d] Hash=[%s] Tx Count=[%d]>" % \
-            (self.__class__.__name__, self.version, self.timestamp, self.nonce, self.calculate_hash(), len(self.txns))
-
 class HeaderVector(BitcoinSerializable):
     """The header only vector."""
     command = "headers"
     def __init__(self, *args, **kwargs):
+        from db.models import Block
         self._fields = [
             Field('headers', fields.ListField(Block), default=[]),
         ]
