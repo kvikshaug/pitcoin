@@ -18,7 +18,7 @@ class TestClient(BitcoinClient):
     def on_handshake(self):
         self.send_message(messages.GetData(inventory=[structures.Inventory(
             inv_type=values.INVENTORY_TYPE["MSG_BLOCK"],
-            inv_hash=int(Block.objects.get(height=0).calculate_hash(), 16),
+            inv_hash=Block.objects.get(height=0).calculate_hash(),
         )]))
 
     def handle_block(self, header, block_message):

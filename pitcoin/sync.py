@@ -25,7 +25,7 @@ class SyncClient(BitcoinClient):
 
     def handle_inv(self, header, message):
         """Request data for any inv - the block handling will sort out random invs"""
-        self.last_expected_block_hash = "{:064x}".format(message.inventory[-1].inv_hash)
+        self.last_expected_block_hash = message.inventory[-1].inv_hash
         self.send_message(messages.GetData(inventory=message.inventory))
 
     def handle_block(self, header, block_message):
@@ -36,8 +36,8 @@ class SyncClient(BitcoinClient):
         # Save the new block
         block = Block(
             version=block_message.version,
-            prev_hash=block_message.prev_hash(),
-            merkle_root="{:064x}".format(block_message.merkle_root),
+            prev_hash=block_message.prev_block_hash,
+            merkle_root=block_message.merkle_root,
             timestamp=block_message.timestamp,
             bits=block_message.bits,
             nonce=block_message.nonce,
@@ -78,7 +78,7 @@ class Synchronizer(object):
         step = 1
         hashes = []
         while i >= 0:
-            hashes.append(int(Block.objects.get(height=i).calculate_hash(), 16))
+            hashes.append(Block.objects.get(height=i).calculate_hash())
             if i <= top - 10:
                 step *= 2
             i -= step

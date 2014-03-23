@@ -11,7 +11,7 @@ def validate_block(block_message, prev_block):
     # Calculate the current target
     target = get_target(block_message, prev_block)
 
-    if block_message.prev_hash() != prev_block.calculate_hash():
+    if block_message.prev_block_hash != prev_block.calculate_hash():
         # TODO: Proper logging
         print("Rejecting block %s: The previous block hash (%s) differs from our latest block hash (%s)" %
             (block_message, block_message.prev_hash(), prev_block.calculate_hash()))

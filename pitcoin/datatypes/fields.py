@@ -179,9 +179,10 @@ class Hash(object):
             data = stream.read(data_size)
             val = struct.unpack(self.datatype, data)[0]
             intvalue += val << (i * 32)
-        return intvalue
+        return "{:064x}".format(intvalue)
 
     def serialize(self, stream, value):
+        value = int(value, 16)
         for i in range(8):
             stream.write(struct.pack(self.datatype, value & 0xFFFFFFFF))
             value >>= 32

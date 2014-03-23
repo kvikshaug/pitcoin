@@ -28,8 +28,8 @@ class Block(models.Model):
         """Use protocoins hash calculation"""
         return PBlock(
             version=self.version,
-            prev_block=int(self.prev_hash, 16),
-            merkle_root=int(self.merkle_root, 16),
+            prev_block_hash=self.prev_hash,
+            merkle_root=self.merkle_root,
             timestamp=self.timestamp,
             bits=self.bits,
             nonce=self.nonce,

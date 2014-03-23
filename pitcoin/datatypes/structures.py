@@ -88,7 +88,7 @@ class Inventory(BitcoinSerializable):
     def __init__(self, *args, **kwargs):
         self._fields = [
             Field('inv_type', fields.UInt32LEField(), default=values.INVENTORY_TYPE["MSG_TX"]),
-            Field('inv_hash', fields.Hash(), default=0),
+            Field('inv_hash', fields.Hash(), default="{:064x}".format(0)),
         ]
         super().__init__(*args, **kwargs)
 
@@ -100,20 +100,20 @@ class Inventory(BitcoinSerializable):
         return "Unknown Type"
 
     def __repr__(self):
-        return "<%s Type=[%s] Hash=[%064x]>" % \
+        return "<%s Type=[%s] Hash=[%s]>" % \
             (self.__class__.__name__, self.type_to_text(), self.inv_hash)
 
 class OutPoint(BitcoinSerializable):
     """The OutPoint of a transaction."""
     def __init__(self, *args, **kwargs):
         self._fields = [
-            Field('out_hash', fields.Hash(), default=0),
+            Field('out_hash', fields.Hash(), default="{:064x}".format(0)),
             Field('index', fields.UInt32LEField(), default=0),
         ]
         super().__init__(*args, **kwargs)
 
     def __repr__(self):
-        return "<%s Index=[%d] Hash=[%064x]>" % \
+        return "<%s Index=[%d] Hash=[%s]>" % \
             (self.__class__.__name__, self.index, self.out_hash)
 
 class TxIn(BitcoinSerializable):

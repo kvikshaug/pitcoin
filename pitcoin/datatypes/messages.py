@@ -156,8 +156,8 @@ class Block(BitcoinSerializable):
     def __init__(self, *args, **kwargs):
         self._fields = [
             Field('version', fields.UInt32LEField(), default=0),
-            Field('prev_block', fields.Hash(), default=0),
-            Field('merkle_root', fields.Hash(), default=0),
+            Field('prev_block_hash', fields.Hash(), default="{:064x}".format(0)),
+            Field('merkle_root', fields.Hash(), default="{:064x}".format(0)),
             Field('timestamp', fields.DatetimeField(fields.UInt32LEField()), default=lambda: datetime.utcnow()),
             Field('bits', fields.UInt32LEField(), default=0),
             Field('nonce', fields.UInt32LEField(), default=0),
@@ -170,9 +170,6 @@ class Block(BitcoinSerializable):
 
     def __iter__(self):
         return __iter__(self.txns)
-
-    def prev_hash(self):
-        return "{:064x}".format(self.prev_block)
 
     def calculate_hash(self):
         hash_fields = [f for f in self._fields if f.name != 'txns']
@@ -235,7 +232,7 @@ class GetBlocks(BitcoinSerializable):
         self._fields = [
             Field('version', fields.UInt32LEField(), values.PROTOCOL_VERSION),
             Field('block_locator_hashes', fields.ListField(fields.Hash), default=[]),
-            Field('hash_stop', fields.Hash(), 0),
+            Field('hash_stop', fields.Hash(), default="{:064x}".format(0)),
         ]
         super().__init__(*args, **kwargs)
 
