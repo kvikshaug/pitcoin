@@ -1,5 +1,7 @@
 import struct
 import socket
+import calendar
+from datetime import datetime
 
 from .meta import BitcoinSerializable
 from . import values
@@ -39,6 +41,19 @@ class UInt16LEField(PrimaryField):
 class UInt16BEField(PrimaryField):
     """16-bit big-endian unsigned integer field."""
     datatype = ">H"
+
+class DatetimeField(object):
+    """A UTC unix timestamp, represented with an integer of varying datatype"""
+    def __init__(self, int_serializer):
+        self.int_serializer = int_serializer
+
+    def deserialize(self, stream):
+        int_value = self.int_serializer.deserialize(stream)
+        return datetime.utcfromtimestamp(int_value)
+
+    def serialize(self, stream, value):
+        int_value = calendar.timegm(value.utctimetuple())
+        self.int_serializer.serialize(stream, int_value)
 
 class FixedByteStringField(object):
     """A fixed length bytestring field."""

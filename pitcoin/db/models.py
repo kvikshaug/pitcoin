@@ -1,5 +1,3 @@
-import calendar
-
 from django.db import models
 
 from datatypes.messages import Block as PBlock
@@ -32,10 +30,7 @@ class Block(models.Model):
             version=self.version,
             prev_block=int(self.prev_hash, 16),
             merkle_root=int(self.merkle_root, 16),
-            timestamp=self.timestamp_unixtime(),
+            timestamp=self.timestamp,
             bits=self.bits,
             nonce=self.nonce,
         ).calculate_hash()
-
-    def timestamp_unixtime(self):
-        return calendar.timegm(self.timestamp.utctimetuple())

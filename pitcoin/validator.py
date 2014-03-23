@@ -42,7 +42,7 @@ def get_target(block_message, prev_block):
 
     # 20 minute rule for testnet
     if testnet:
-        if current_height % retarget_interval != 0 and block_message.timestamp - prev_block.timestamp_unixtime() > 1200:
+        if current_height % retarget_interval != 0 and (block_message.timestamp - prev_block.timestamp).seconds > 1200:
             target = max_target
 
     return target
@@ -56,7 +56,7 @@ def retarget(target, prev_block):
     retarget_height = 0 if current_height < retarget_interval else current_height - retarget_interval
     last_retargeted_block = Block.objects.get(height=retarget_height)
 
-    timespan = prev_block.timestamp_unixtime() - last_retargeted_block.timestamp_unixtime()
+    timespan = (prev_block.timestamp - last_retargeted_block.timestamp).seconds
 
     # Limit adjustment step
     if timespan > target_timespan * 4:

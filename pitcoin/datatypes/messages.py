@@ -5,6 +5,7 @@ import inspect
 from io import BytesIO
 import binascii
 import hashlib
+from datetime import datetime
 
 from net.exceptions import UnknownCommand
 from util import compact
@@ -17,7 +18,7 @@ class Version(BitcoinSerializable):
         self._fields = [
             Field('version', fields.Int32LEField(), default=values.PROTOCOL_VERSION),
             Field('services', fields.UInt64LEField(), default=values.SERVICES["NODE_NETWORK"]),
-            Field('timestamp', fields.Int64LEField(), default=lambda: int(time.time())),
+            Field('timestamp', fields.DatetimeField(fields.Int64LEField()), default=lambda: datetime.utcnow()),
             Field('addr_recv', structures.IPv4Address()),
             Field('addr_from', structures.IPv4Address()),
             Field('nonce', fields.UInt64LEField(), default=lambda: random.randint(0, 2**32-1)),
@@ -39,8 +40,8 @@ class Version(BitcoinSerializable):
         if not services:
             services = "No Services"
         return "<%s Version=[%d] Services=%r Timestamp=[%s] Recv=[%r] From=[%r] Nonce=[%d] UA=[%s]>" % \
-            (self.__class__.__name__, self.version, services, time.ctime(self.timestamp), self.addr_recv,
-            self.addr_from, self.nonce, self.user_agent)
+            (self.__class__.__name__, self.version, services, self.timestamp, self.addr_recv, self.addr_from,
+            self.nonce, self.user_agent)
 
 class VerAck(BitcoinSerializable):
     """The version acknowledge (verack) command."""
@@ -160,7 +161,7 @@ class Block(BitcoinSerializable):
             Field('version', fields.UInt32LEField(), default=0),
             Field('prev_block', fields.Hash(), default=0),
             Field('merkle_root', fields.Hash(), default=0),
-            Field('timestamp', fields.UInt32LEField(), default=0),
+            Field('timestamp', fields.DatetimeField(fields.UInt32LEField()), default=lambda: datetime.utcnow()),
             Field('bits', fields.UInt32LEField(), default=0),
             Field('nonce', fields.UInt32LEField(), default=0),
             Field('txns', fields.ListField(Tx), default=[]),
@@ -199,8 +200,7 @@ class Block(BitcoinSerializable):
 
     def __repr__(self):
         return "<%s Version=[%d] Timestamp=[%s] Nonce=[%d] Hash=[%s] Tx Count=[%d]>" % \
-            (self.__class__.__name__, self.version, time.ctime(self.timestamp), self.nonce,
-            self.calculate_hash(), len(self.txns))
+            (self.__class__.__name__, self.version, self.timestamp, self.nonce, self.calculate_hash(), len(self.txns))
 
 class HeaderVector(BitcoinSerializable):
     """The header only vector."""

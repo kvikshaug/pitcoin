@@ -30,7 +30,7 @@ class AddressClient(BitcoinClient):
             AddressBook.addresses.append(Node(
                 ip_address=message_address.address.ip_address,
                 port=message_address.address.port,
-                time=datetime.fromtimestamp(message_address.timestamp),
+                time=message_address.timestamp,
             ))
 
 class AddressBook(threading.Thread):

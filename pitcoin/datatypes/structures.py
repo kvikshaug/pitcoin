@@ -74,14 +74,14 @@ class IPv4AddressTimestamp(BitcoinSerializable):
     """The IPv4 Address with timestamp."""
     def __init__(self, *args, **kwargs):
         self._fields = [
-            Field('timestamp', fields.UInt32LEField(), default=lambda: time.time()),
+            Field('timestamp', fields.DatetimeField(fields.UInt32LEField()), default=lambda: datetime.utcnow()),
             Field('address', IPv4Address()),
         ]
         super().__init__(*args, **kwargs)
 
     def __repr__(self):
         return "<%s Timestamp=[%s] Address=[%r]>" % \
-            (self.__class__.__name__, time.ctime(self.timestamp), self.address)
+            (self.__class__.__name__, self.timestamp, self.address)
 
 class Inventory(BitcoinSerializable):
     """The Inventory representation."""

@@ -38,7 +38,7 @@ class SyncClient(BitcoinClient):
             version=block_message.version,
             prev_hash=block_message.prev_hash(),
             merkle_root="{:064x}".format(block_message.merkle_root),
-            timestamp=datetime.utcfromtimestamp(block_message.timestamp),
+            timestamp=block_message.timestamp,
             bits=block_message.bits,
             nonce=block_message.nonce,
             prev_block=self.prev_block,
