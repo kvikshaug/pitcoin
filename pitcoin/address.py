@@ -8,7 +8,11 @@ from net.clients import BitcoinClient
 from net.exceptions import NodeDisconnected
 from datatypes import messages
 
-from models import Node
+class Node(object):
+    def __init__(self, ip_address, port, time):
+        self.ip_address = ip_address
+        self.port = port
+        self.time = time
 
 class AddressClient(BitcoinClient):
     def __init__(self, *args, **kwargs):
