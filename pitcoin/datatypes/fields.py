@@ -67,8 +67,7 @@ class FixedStringField(object):
 
     def serialize(self, stream, value):
         value = value.encode(values.STRING_ENCODING)
-        stream.write(value[:self.length])
-        stream.write(b"\x00" * (12 - len(value)))
+        stream.write(value[:self.length].ljust(self.length, b'\x00'))
 
 class ListField(object):
     """A field used to serialize/deserialize a list of fields. """
