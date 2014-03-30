@@ -1,6 +1,9 @@
 import time
 import random
 from datetime import datetime
+from io import BytesIO
+import hashlib
+import binascii
 
 from .meta import Field, BitcoinSerializable
 from . import structures, values, fields
@@ -129,6 +132,13 @@ class Transaction(BitcoinSerializable):
             Field('lock_time', fields.UInt32LEField(), default=0),
         ]
         super().__init__(*args, **kwargs)
+
+    def calculate_hash(self):
+        stream = BytesIO()
+        self.serialize(stream)
+        h = hashlib.sha256(stream.getvalue()).digest()
+        h = hashlib.sha256(h).digest()
+        return binascii.hexlify(h[::-1]).decode('ascii')
 
     def _locktime_to_text(self):
         """Converts the lock-time to textual representation."""
