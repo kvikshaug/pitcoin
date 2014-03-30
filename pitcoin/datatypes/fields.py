@@ -55,21 +55,6 @@ class DatetimeField(object):
         int_value = calendar.timegm(value.utctimetuple())
         self.int_serializer.serialize(stream, int_value)
 
-class FixedByteStringField(object):
-    """A fixed length bytestring field."""
-    def __init__(self, length):
-        self.length = length
-
-    def deserialize(self, stream):
-        data = stream.read(self.length)
-        value = data.split(b"\x00", 1)[0]
-        return value[:self.length]
-
-    def serialize(self, stream, value):
-        value = value
-        stream.write(value[:self.length])
-        stream.write(b"\x00" * (12 - len(value)))
-
 class FixedStringField(object):
     """A fixed length encoded string field."""
     def __init__(self, length):
