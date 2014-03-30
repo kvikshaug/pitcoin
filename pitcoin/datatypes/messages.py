@@ -118,14 +118,14 @@ class NotFound(BitcoinSerializable):
     def __repr__(self):
         return "<%s Inv Count[%d]>" % (self.__class__.__name__, len(self.inventory))
 
-class Tx(BitcoinSerializable):
+class Transaction(BitcoinSerializable):
     """The main transaction representation, this object will contain all the inputs and outputs of the transaction."""
     command = "tx"
     def __init__(self, *args, **kwargs):
         self._fields = [
             Field('version', fields.UInt32LEField(), default=0),
-            Field('tx_in', fields.ListField(structures.TxIn), default=[]),
-            Field('tx_out', fields.ListField(structures.TxOut), default=[]),
+            Field('inputs', fields.ListField(structures.Input), default=[]),
+            Field('outputs', fields.ListField(structures.Output), default=[]),
             Field('lock_time', fields.UInt32LEField(), default=0),
         ]
         super().__init__(*args, **kwargs)
@@ -142,9 +142,8 @@ class Tx(BitcoinSerializable):
         return text
 
     def __repr__(self):
-        return "<%s Version=[%d] Lock Time=[%s] TxIn Count=[%d] TxOut Count=[%d]>" \
-            % (self.__class__.__name__, self.version, self._locktime_to_text(),
-                len(self.tx_in), len(self.tx_out))
+        return "<%s Version=[%d] Lock Time=[%s] Inputs=[%d] Outputs=[%d]>" \
+            % (self.__class__.__name__, self.version, self._locktime_to_text(), len(self.inputs), len(self.outputs))
 
 class HeaderVector(BitcoinSerializable):
     """The header only vector."""

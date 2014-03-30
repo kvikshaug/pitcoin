@@ -5,7 +5,7 @@ import binascii
 
 from django.db import models
 
-from datatypes.messages import Tx
+from datatypes.messages import Transaction
 from datatypes.meta import Field, BitcoinSerializable
 from datatypes import fields
 from util import compact
@@ -46,7 +46,7 @@ class Block(BitcoinSerializable, models.Model):
             Field('timestamp', fields.DatetimeField(fields.UInt32LEField()), default=lambda: datetime.utcnow()),
             Field('bits', fields.UInt32LEField(), default=0),
             Field('nonce', fields.UInt32LEField(), default=0),
-            Field('txns', fields.ListField(Tx), default=[]),
+            Field('transactions', fields.ListField(Transaction), default=[]),
         ]
         super().__init__(*args, **kwargs)
 
@@ -55,7 +55,7 @@ class Block(BitcoinSerializable, models.Model):
     #
 
     def calculate_hash(self):
-        hash_fields = [f for f in self._fields if f.name != 'txns']
+        hash_fields = [f for f in self._fields if f.name != 'transactions']
         stream = BytesIO()
         for field in hash_fields:
             field.serializer.serialize(stream, getattr(self, field.name))
@@ -76,5 +76,5 @@ class Block(BitcoinSerializable, models.Model):
         return int(self.calculate_hash(), 16) <= target
 
     def __repr__(self):
-        return "<%s Version=[%d] Timestamp=[%s] Nonce=[%d] Hash=[%s] Tx Count=[%d]>" % \
-            (self.__class__.__name__, self.version, self.timestamp, self.nonce, self.calculate_hash(), len(self.txns))
+        return "<%s Version=[%d] Timestamp=[%s] Nonce=[%d] Hash=[%s] Transaction Count=[%d]>" % \
+            (self.__class__.__name__, self.version, self.timestamp, self.nonce, self.calculate_hash(), len(self.transactions))

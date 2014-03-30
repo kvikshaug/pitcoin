@@ -103,21 +103,8 @@ class Inventory(BitcoinSerializable):
         return "<%s Type=[%s] Hash=[%s]>" % \
             (self.__class__.__name__, self.type_to_text(), self.inv_hash)
 
-class OutPoint(BitcoinSerializable):
-    """The OutPoint of a transaction."""
-    def __init__(self, *args, **kwargs):
-        self._fields = [
-            Field('out_hash', fields.Hash(), default="{:064x}".format(0)),
-            Field('index', fields.UInt32LEField(), default=0),
-        ]
-        super().__init__(*args, **kwargs)
-
-    def __repr__(self):
-        return "<%s Index=[%d] Hash=[%s]>" % \
-            (self.__class__.__name__, self.index, self.out_hash)
-
-class TxIn(BitcoinSerializable):
-    """The transaction input representation."""
+class Input(BitcoinSerializable):
+    """The input of a transaction; a coinbase (generated) input or reference to an output"""
     def __init__(self, *args, **kwargs):
         self._fields = [
             Field('previous_output', OutPoint()),
@@ -129,12 +116,12 @@ class TxIn(BitcoinSerializable):
     def __repr__(self):
         return "<%s Sequence=[%d]>" % (self.__class__.__name__, self.sequence)
 
-class TxOut(BitcoinSerializable):
-    """The transaction output."""
+class Output(BitcoinSerializable):
+    """The output of a transaction; the instructions for claiming the included bitcoins"""
     def __init__(self, *args, **kwargs):
         self._fields = [
             Field('value', fields.Int64LEField(), default=0),
-            Field('pk_script', fields.VariableByteStringField(), default=b""),
+            Field('pubkey_script', fields.VariableByteStringField(), default=b""),
         ]
         super().__init__(*args, **kwargs)
 
@@ -144,3 +131,16 @@ class TxOut(BitcoinSerializable):
     def __repr__(self):
         return "<%s Value=[%.8f]>" % (self.__class__.__name__,
             self.get_btc_value())
+
+class OutPoint(BitcoinSerializable):
+    """The reference to a transaction output, referenced by an input"""
+    def __init__(self, *args, **kwargs):
+        self._fields = [
+            Field('out_hash', fields.Hash(), default="{:064x}".format(0)),
+            Field('index', fields.UInt32LEField(), default=0),
+        ]
+        super().__init__(*args, **kwargs)
+
+    def __repr__(self):
+        return "<%s Index=[%d] Hash=[%s]>" % \
+            (self.__class__.__name__, self.index, self.out_hash)

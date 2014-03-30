@@ -23,10 +23,10 @@ class TestClient(BitcoinClient):
 
     def handle_block(self, header, block_message):
         print("Got genesis block: %s" % block_message)
-        for tx in block_message.txns:
-            for tx_out in tx.tx_out:
-                print(tx_out.pk_script)
-                script = Script(tx_out.pk_script)
+        for tx in block_message.transactions:
+            for output in tx.outputs:
+                print(output.pubkey_script)
+                script = Script(output.pubkey_script)
                 script.execute()
 
 class Script(object):
