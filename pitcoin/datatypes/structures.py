@@ -1,5 +1,6 @@
 import hashlib
 import struct
+from datetime import datetime
 
 from .meta import Field, BitcoinSerializable
 from . import fields, values
