@@ -127,3 +127,6 @@ OP_NOP8 = 0xb7
 OP_NOP9 = 0xb8
 OP_NOP10 = 0xb9
 OP_INVALIDOPCODE = 0xff
+
+# Dict of {value: opcode name} for reverse lookup
+OPCODE_NAME_LOOKUPS = {value: name for name, value in globals().copy().items() if not name.startswith('_')}
