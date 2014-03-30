@@ -56,13 +56,8 @@ class IPv4Address(BitcoinSerializable):
         super().__init__(*args, **kwargs)
 
     def _services_to_text(self):
-        """Converts the services field into a textual
-        representation."""
-        services = []
-        for service_name, flag_mask in values.SERVICES.items():
-            if self.services & flag_mask:
-                services.append(service_name)
-        return services
+        """Convert the services field into a textual representation"""
+        return [service_name for service_name, flag_mask in values.SERVICES.items() if self.services & flag_mask]
 
     def __repr__(self):
         services = self._services_to_text()
@@ -80,8 +75,7 @@ class IPv4AddressTimestamp(BitcoinSerializable):
         super().__init__(*args, **kwargs)
 
     def __repr__(self):
-        return "<%s Timestamp=[%s] Address=[%r]>" % \
-            (self.__class__.__name__, self.timestamp, self.address)
+        return "<%s Timestamp=[%s] Address=[%r]>" % (self.__class__.__name__, self.timestamp, self.address)
 
 class Inventory(BitcoinSerializable):
     """The Inventory representation."""
@@ -100,8 +94,7 @@ class Inventory(BitcoinSerializable):
         return "Unknown Type"
 
     def __repr__(self):
-        return "<%s Type=[%s] Hash=[%s]>" % \
-            (self.__class__.__name__, self.type_to_text(), self.inv_hash)
+        return "<%s Type=[%s] Hash=[%s]>" % (self.__class__.__name__, self.type_to_text(), self.inv_hash)
 
 class Input(BitcoinSerializable):
     """The input of a transaction; a coinbase (generated) input or reference to an output"""
@@ -129,8 +122,7 @@ class Output(BitcoinSerializable):
         return self.value//100000000 + self.value%100000000/100000000.0
 
     def __repr__(self):
-        return "<%s Value=[%.8f]>" % (self.__class__.__name__,
-            self.get_btc_value())
+        return "<%s Value=[%.8f]>" % (self.__class__.__name__, self.get_btc_value())
 
 class OutPoint(BitcoinSerializable):
     """The reference to a transaction output, referenced by an input"""
@@ -142,5 +134,4 @@ class OutPoint(BitcoinSerializable):
         super().__init__(*args, **kwargs)
 
     def __repr__(self):
-        return "<%s Index=[%d] Hash=[%s]>" % \
-            (self.__class__.__name__, self.index, self.out_hash)
+        return "<%s Index=[%d] Hash=[%s]>" % (self.__class__.__name__, self.index, self.out_hash)
