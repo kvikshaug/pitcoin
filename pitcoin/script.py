@@ -59,19 +59,19 @@ class Script(object):
                 self.chunks.append({'type': 'data', 'value': script[i:i+read_length], 'start_index': start_index})
                 i += read_length
             elif opcode == OP_PUSHDATA1:
-                read_length = int.from_bytes(script.read(1), byteorder='little')
+                read_length = int.from_bytes(script[i:i+1], byteorder='little')
                 self.chunks.append({'type': 'data', 'value': script[i:i+read_length], 'start_index': start_index})
-                i += read_length
+                i += 1 + read_length
             elif opcode == OP_PUSHDATA2:
-                read_length = int.from_bytes(script.read(2), byteorder='little')
+                read_length = int.from_bytes(script[i:i+2], byteorder='little')
                 self.chunks.append({'type': 'data', 'value': script[i:i+read_length], 'start_index': start_index})
-                i += read_length
+                i += 2 + read_length
             elif opcode == OP_PUSHDATA4:
                 # OP_PUSHDATA4 should never be used, as pushes over 520 bytes are not allowed, and
                 # those below can be done using OP_PUSHDATA2, but we'll implement it nevertheless
-                read_length = int.from_bytes(script.read(4), byteorder='little')
+                read_length = int.from_bytes(script[i:i+4], byteorder='little')
                 self.chunks.append({'type': 'data', 'value': script[i:i+read_length], 'start_index': start_index})
-                i += read_length
+                i += 4 + read_length
             else:
                 if opcode >= OP_NOP:
                     # Note how OP_RESERVED does not count towards the opcode limit.
