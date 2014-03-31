@@ -470,6 +470,55 @@ class Script(object):
                         if not sig_valid:
                             raise ScriptFailure("OP_CHECKSIGVERIFY failed")
 
+    def signature_subscript(self, last_code_separator_index, signature):
+        """Yields the script bytes to be included when hashing a transaction to verify its input.
+        More concretely, the subscript from the last OP_CODESEPARATOR, without further OP_CODESEPARATORs and without
+        any occurrences of the signature, should they be there.
+        See https://en.bitcoin.it/w/images/en/7/70/Bitcoin_OpCheckSig_InDetail.png"""
+        original_stream = BytesIO(self.raw_script)
+        result_stream = BytesIO()
+
+        while original_stream.tell() < len(self.raw_script):
+            opcode_byte = original_stream.read(1)
+            opcode = int.from_bytes(opcode_byte, byteorder='little')
+
+            if opcode >= 0 and opcode < OP_PUSHDATA1:
+                value = original_stream.read(opcode)
+                if value == signature:
+                    continue
+                result_stream.write(opcode_byte)
+                result_stream.write(value)
+            elif opcode == OP_PUSHDATA1:
+                length = int.from_bytes(original_stream.read(1), byteorder='little')
+                value = original_stream.read(length)
+                if value == signature:
+                    continue
+                result_stream.write(opcode_byte)
+                result_stream.write(length)
+                result_stream.write(value)
+            elif opcode == OP_PUSHDATA2:
+                length = int.from_bytes(original_stream.read(2), byteorder='little')
+                value = original_stream.read(length)
+                if value == signature:
+                    continue
+                result_stream.write(opcode_byte)
+                result_stream.write(length)
+                result_stream.write(value)
+            elif opcode == OP_PUSHDATA4:
+                length = int.from_bytes(original_stream.read(4), byteorder='little')
+                value = original_stream.read(length)
+                if value == signature:
+                    continue
+                result_stream.write(opcod_bytee)
+                result_stream.write(length)
+                result_stream.write(value)
+            else:
+                if opcode == OP_CODESEPARATOR:
+                    continue
+                result_stream.write(opcode_byte)
+
+        return result_stream.getvalue()
+
     def __repr__(self):
         reprs = []
         for chunk in self.chunks:
