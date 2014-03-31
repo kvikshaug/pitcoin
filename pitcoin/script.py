@@ -470,6 +470,19 @@ class Script(object):
                         if not sig_valid:
                             raise ScriptFailure("OP_CHECKSIGVERIFY failed")
 
+    def __repr__(self):
+        reprs = []
+        for chunk in self.chunks:
+            if chunk['type'] == 'data':
+                reprs.append(binascii.hexlify(chunk['value']).decode('ascii'))
+            elif chunk['type'] == 'opcode':
+                reprs.append(OPCODE_NAME_LOOKUPS[chunk['value']])
+        return ' '.join(reprs)
+
+    #
+    # Utility
+    #
+
     def cast_to_bool(data):
         """Evaluate data to boolean. Exclude 0x80 from last byte because "Can be negative zero" -reference client.
         https://github.com/bitcoin/bitcoin/blob/0.9.0/src/script.cpp#L44"""
@@ -485,15 +498,6 @@ class Script(object):
             # See https://github.com/bitcoin/bitcoin/blob/0.9.0/src/script.cpp#L38
             raise ScriptException("Script tried to use an integer larger than %s bytes" % MAX_SCRIPTNUM_SIZE)
         return mpi2num(snum[::-1], has_length=False)
-
-    def __repr__(self):
-        reprs = []
-        for chunk in self.chunks:
-            if chunk['type'] == 'data':
-                reprs.append(binascii.hexlify(chunk['value']).decode('ascii'))
-            elif chunk['type'] == 'opcode':
-                reprs.append(OPCODE_NAME_LOOKUPS[chunk['value']])
-        return ' '.join(reprs)
 
 class ScriptFailure(Exception):
     """Thrown if a valid operation caused the script to fail verification."""
